@@ -1,0 +1,23 @@
+#!/bin/sh
+
+echo "🔍 Running pre-push checks..."
+
+cd site
+
+# Type check
+echo "🔷 Running TypeScript check..."
+npx tsc --noEmit
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript check failed. Fix errors before pushing."
+  exit 1
+fi
+
+# Build test
+echo "🏗️ Testing build..."
+npm run build
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed. Fix errors before pushing."
+  exit 1
+fi
+
+echo "✅ Pre-push checks passed! Deploying..."
