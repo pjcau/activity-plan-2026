@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "fetch-gare": "tsx scripts/fetch-gare.ts",
+    "seed-ricette": "tsx scripts/seed-ricette.ts",
+    "cleanup-gare": "tsx scripts/cleanup-gare.ts",
     "prepare": "husky"
   },
   "dependencies": {

@@ -1,0 +1,32 @@
+name: Cleanup Old Races
+
+on:
+  schedule:
+    # Ogni giorno alle 3:00 AM UTC
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: site
+
+      - name: Cleanup old races
+        run: npm run cleanup-gare
+        working-directory: site
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
