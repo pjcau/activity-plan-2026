@@ -1,11 +1,5 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  output: "export",
-  basePath: process.env.NODE_ENV === "production" ? "/activity-plan-2026" : "",
-  images: {
-    unoptimized: true,
-  },
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
