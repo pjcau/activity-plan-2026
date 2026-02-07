@@ -8,6 +8,7 @@ const links = [
   { href: "/allenamenti", label: "Allenamenti" },
   { href: "/alimentazione", label: "Alimentazione" },
   { href: "/ricette", label: "Ricette" },
+  { href: "/libri", label: "Libri" },
 ];
 
 export default function Navbar() {
