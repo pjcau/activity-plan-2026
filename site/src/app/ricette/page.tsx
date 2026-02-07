@@ -3,14 +3,13 @@
 import { useState, useMemo } from "react";
 import ricetteData from "@/data/ricette.json";
 
-type Ricetta = (typeof ricetteData.ricette)[number];
-
 const categorie = [
   { value: "", label: "Tutte" },
   { value: "colazione", label: "Colazione" },
   { value: "pranzo", label: "Pranzo" },
   { value: "cena", label: "Cena" },
   { value: "snack", label: "Snack" },
+  { value: "pre-workout", label: "Pre-Workout" },
   { value: "post-workout", label: "Post-Workout" },
 ];
 
@@ -81,6 +80,8 @@ export default function Ricette() {
         return "bg-purple-100 text-purple-800";
       case "snack":
         return "bg-orange-100 text-orange-800";
+      case "pre-workout":
+        return "bg-teal-100 text-teal-800";
       case "post-workout":
         return "bg-red-100 text-red-800";
       default:
@@ -97,7 +98,7 @@ export default function Ricette() {
             Ricette Plant-Based per Atleti
           </h1>
           <p className="text-gray-600">
-            30 ricette dal libro{" "}
+            60 ricette dal libro{" "}
             <span className="font-semibold">
               &quot;{ricetteData.fonte}&quot;
             </span>
