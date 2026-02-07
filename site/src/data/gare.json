@@ -1,0 +1,238 @@
+{
+  "ultimoAggiornamento": "2026-02-07T11:12:05.202Z",
+  "gare": [
+    {
+      "data": "8 feb",
+      "nome": "Brunello Crossing",
+      "distanza": 45,
+      "tipo": "Trail",
+      "localita": "Montalcino",
+      "mese": 2,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "8 feb",
+      "nome": "Maratonina de' 6 Ponti",
+      "distanza": 21,
+      "tipo": "Strada",
+      "localita": "Agliana",
+      "mese": 2,
+      "fonti": [
+        "Calendario Podismo",
+        "US Nave"
+      ]
+    },
+    {
+      "data": "8 feb",
+      "nome": "8 Trofeo BigMat Competitiva",
+      "distanza": 21,
+      "tipo": "Strada",
+      "localita": "Sesto Fiorentino",
+      "mese": 2,
+      "fonti": [
+        "US Nave"
+      ]
+    },
+    {
+      "data": "15 feb",
+      "nome": "Trail del Poggiolo",
+      "distanza": 20,
+      "tipo": "Trail",
+      "localita": "Palazzuolo sul Senio",
+      "mese": 2,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "15 feb",
+      "nome": "Trail Monte Spinosa",
+      "distanza": 20,
+      "tipo": "Trail",
+      "localita": "Venturina Terme",
+      "mese": 2,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "15 feb",
+      "nome": "Mezza Maratona Città di Scandicci",
+      "distanza": 21,
+      "tipo": "Strada",
+      "localita": "Scandicci",
+      "mese": 2,
+      "fonti": [
+        "Calendario Podismo",
+        "US Nave"
+      ]
+    },
+    {
+      "data": "22 feb",
+      "nome": "Ecomaratona del Chianti",
+      "distanza": 42,
+      "tipo": "Trail",
+      "localita": "Castelnuovo Berardenga",
+      "mese": 2,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "22 feb",
+      "nome": "Ultra Trail Mugello",
+      "distanza": 75,
+      "tipo": "Trail",
+      "localita": "Borgo San Lorenzo",
+      "mese": 2,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "1 mar",
+      "nome": "Scagliata Trail",
+      "distanza": 21,
+      "tipo": "Trail",
+      "localita": "Grosseto",
+      "mese": 3,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "8 mar",
+      "nome": "Trail della Maremma",
+      "distanza": 50,
+      "tipo": "Trail",
+      "localita": "Castiglione della Pescaia",
+      "mese": 3,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "8 mar",
+      "nome": "Maratona di Pisa",
+      "distanza": 42,
+      "tipo": "Strada",
+      "localita": "Pisa",
+      "mese": 3,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "15 mar",
+      "nome": "Trail delle Vie Cave",
+      "distanza": 21,
+      "tipo": "Trail",
+      "localita": "Pitigliano",
+      "mese": 3,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "15 mar",
+      "nome": "Maratonina di Tavarnelle",
+      "distanza": 21,
+      "tipo": "Strada",
+      "localita": "Tavarnelle",
+      "mese": 3,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "22 mar",
+      "nome": "Ultra Amiata Trail",
+      "distanza": 80,
+      "tipo": "Trail",
+      "localita": "Abbadia San Salvatore",
+      "mese": 3,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "29 mar",
+      "nome": "Trail delle Crete Senesi",
+      "distanza": 35,
+      "tipo": "Trail",
+      "localita": "Asciano",
+      "mese": 3,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "29 mar",
+      "nome": "Firenze Half Marathon",
+      "distanza": 21,
+      "tipo": "Strada",
+      "localita": "Firenze",
+      "mese": 3,
+      "fonti": [
+        "US Nave"
+      ]
+    },
+    {
+      "data": "5 apr",
+      "nome": "Ecotrail Firenze",
+      "distanza": 60,
+      "tipo": "Trail",
+      "localita": "Firenze",
+      "mese": 4,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "5 apr",
+      "nome": "Maratonina di Lucca",
+      "distanza": 21,
+      "tipo": "Strada",
+      "localita": "Lucca",
+      "mese": 4,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "12 apr",
+      "nome": "Trail del Monte Pisano",
+      "distanza": 30,
+      "tipo": "Trail",
+      "localita": "Calci",
+      "mese": 4,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "19 apr",
+      "nome": "Ultratrail Garfagnana",
+      "distanza": 72,
+      "tipo": "Trail",
+      "localita": "Castelnuovo di Garfagnana",
+      "mese": 4,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    },
+    {
+      "data": "26 apr",
+      "nome": "Maratona del Mugello",
+      "distanza": 42,
+      "tipo": "Strada",
+      "localita": "Scarperia",
+      "mese": 4,
+      "fonti": [
+        "Calendario Podismo"
+      ]
+    }
+  ]
+}
