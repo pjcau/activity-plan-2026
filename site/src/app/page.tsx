@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import gareData from "../data/gare.json";
+import { useAuth } from "@/lib/AuthContext";
 
 type Fonte = "Calendario Podismo" | "US Nave";
 
@@ -135,7 +136,19 @@ function FonteBadge({ fonte }: { fonte: Fonte }) {
   );
 }
 
-function GareTable({ gare }: { gare: Gara[] }) {
+function garaKey(gara: Gara): string {
+  return `${gara.nome}::${gara.data}`;
+}
+
+function GareTable({
+  gare,
+  savedKeys,
+  onToggle,
+}: {
+  gare: Gara[];
+  savedKeys?: Set<string>;
+  onToggle?: (gara: Gara) => void;
+}) {
   if (gare.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -143,6 +156,8 @@ function GareTable({ gare }: { gare: Gara[] }) {
       </div>
     );
   }
+
+  const showStar = !!onToggle;
 
   const garePerMese = gare.reduce((acc, gara) => {
     if (!acc[gara.mese]) acc[gara.mese] = [];
@@ -163,6 +178,7 @@ function GareTable({ gare }: { gare: Gara[] }) {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-emerald-600 text-white">
+                    {showStar && <th className="p-3 w-10"></th>}
                     <th className="p-3 text-left">Data</th>
                     <th className="p-3 text-left">Gara</th>
                     <th className="p-3 text-left">Distanza</th>
@@ -173,37 +189,55 @@ function GareTable({ gare }: { gare: Gara[] }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {gareDelMese.map((gara, i) => (
-                    <tr key={i} className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                      <td className="p-3 border-b">{gara.data}</td>
-                      <td className="p-3 border-b font-medium">{gara.nome}</td>
-                      <td className="p-3 border-b">{gara.distanza} km</td>
-                      <td className="p-3 border-b">
-                        <span
-                          className={`px-2 py-1 rounded text-sm ${
-                            gara.tipo === "Trail"
-                              ? "bg-orange-100 text-orange-700"
-                              : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {gara.tipo}
-                        </span>
-                      </td>
-                      <td className="p-3 border-b">{gara.localita}</td>
-                      <td className="p-3 border-b text-sm text-gray-500">
-                        {getDistanzaDaFirenze(gara.localita) !== null
-                          ? `${getDistanzaDaFirenze(gara.localita)} km`
-                          : "—"}
-                      </td>
-                      <td className="p-3 border-b">
-                        <div className="flex gap-1">
-                          {gara.fonti.map((f) => (
-                            <FonteBadge key={f} fonte={f} />
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {gareDelMese.map((gara, i) => {
+                    const saved = savedKeys?.has(garaKey(gara));
+                    return (
+                      <tr key={i} className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                        {showStar && (
+                          <td className="p-3 border-b text-center">
+                            <button
+                              onClick={() => onToggle(gara)}
+                              className={`text-xl transition-colors ${
+                                saved
+                                  ? "text-yellow-500 hover:text-yellow-600"
+                                  : "text-gray-300 hover:text-yellow-400"
+                              }`}
+                              title={saved ? "Rimuovi dalle mie gare" : "Aggiungi alle mie gare"}
+                            >
+                              {saved ? "\u2605" : "\u2606"}
+                            </button>
+                          </td>
+                        )}
+                        <td className="p-3 border-b">{gara.data}</td>
+                        <td className="p-3 border-b font-medium">{gara.nome}</td>
+                        <td className="p-3 border-b">{gara.distanza} km</td>
+                        <td className="p-3 border-b">
+                          <span
+                            className={`px-2 py-1 rounded text-sm ${
+                              gara.tipo === "Trail"
+                                ? "bg-orange-100 text-orange-700"
+                                : "bg-blue-100 text-blue-700"
+                            }`}
+                          >
+                            {gara.tipo}
+                          </span>
+                        </td>
+                        <td className="p-3 border-b">{gara.localita}</td>
+                        <td className="p-3 border-b text-sm text-gray-500">
+                          {getDistanzaDaFirenze(gara.localita) !== null
+                            ? `${getDistanzaDaFirenze(gara.localita)} km`
+                            : "—"}
+                        </td>
+                        <td className="p-3 border-b">
+                          <div className="flex gap-1">
+                            {gara.fonti.map((f) => (
+                              <FonteBadge key={f} fonte={f} />
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -214,6 +248,7 @@ function GareTable({ gare }: { gare: Gara[] }) {
 }
 
 export default function Home() {
+  const { user, supabase } = useAuth();
   const [meseSelezionato, setMeseSelezionato] = useState<number>(() => new Date().getMonth() + 1);
   const [mounted] = useState(() => typeof window !== "undefined");
   const [distanzaMin, setDistanzaMin] = useState<number>(20);
@@ -221,6 +256,51 @@ export default function Home() {
   const [maxDistDaFirenze, setMaxDistDaFirenze] = useState<number>(150);
   const [fontiAttive, setFontiAttive] = useState<Set<Fonte>>(
     new Set(["Calendario Podismo", "US Nave"])
+  );
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!user || !supabase) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from("user_gare")
+        .select("gara_nome, gara_data");
+      if (data) {
+        setSavedKeys(new Set(data.map((r) => `${r.gara_nome}::${r.gara_data}`)));
+      }
+    };
+    load();
+  }, [user, supabase]);
+
+  const toggleGara = useCallback(
+    async (gara: Gara) => {
+      if (!user || !supabase) return;
+      const key = garaKey(gara);
+      if (savedKeys.has(key)) {
+        await supabase
+          .from("user_gare")
+          .delete()
+          .eq("gara_nome", gara.nome)
+          .eq("gara_data", gara.data);
+        setSavedKeys((prev) => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+      } else {
+        await supabase.from("user_gare").insert({
+          user_id: user.id,
+          gara_nome: gara.nome,
+          gara_data: gara.data,
+          gara_distanza: gara.distanza,
+          gara_tipo: gara.tipo,
+          gara_localita: gara.localita,
+          gara_mese: gara.mese,
+        });
+        setSavedKeys((prev) => new Set(prev).add(key));
+      }
+    },
+    [user, supabase, savedKeys]
   );
 
   const toggleFonte = (fonte: Fonte) => {
@@ -372,7 +452,11 @@ export default function Home() {
         </div>
 
         {/* Tabella Gare */}
-        <GareTable gare={gareFiltrate} />
+        <GareTable
+          gare={gareFiltrate}
+          savedKeys={user ? savedKeys : undefined}
+          onToggle={user ? toggleGara : undefined}
+        />
       </main>
     </div>
   );

@@ -1,31 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase";
-import type { User } from "@supabase/supabase-js";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function AuthButton() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [supabase] = useState(() => createClient());
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
-    };
-    getUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase]);
+  const { user, loading, supabase } = useAuth();
 
   const handleLogin = async () => {
-    if (!supabase) return;
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -35,9 +15,7 @@ export default function AuthButton() {
   };
 
   const handleLogout = async () => {
-    if (!supabase) return;
     await supabase.auth.signOut();
-    setUser(null);
   };
 
   if (loading) {

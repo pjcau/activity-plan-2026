@@ -23,12 +23,12 @@ export default function Navbar() {
   return (
     <nav className="bg-emerald-800 border-b border-emerald-600">
       <div className="max-w-5xl mx-auto px-4">
-        <div className="flex space-x-6">
+        <div className="flex space-x-6 overflow-x-auto scrollbar-hide">
           {allLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`py-3 px-2 text-sm font-medium transition-colors ${
+              className={`py-3 px-2 text-sm font-medium transition-colors whitespace-nowrap ${
                 pathname === link.href
                   ? "text-white border-b-2 border-white"
                   : "text-emerald-200 hover:text-white"
