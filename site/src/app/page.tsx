@@ -1,4 +1,12 @@
-const gare = {
+type Gara = {
+  data: string;
+  nome: string;
+  distanza: string;
+  tipo: "Trail" | "Strada";
+  localita: string;
+};
+
+const gare: { febbraio: Gara[]; marzo: Gara[] } = {
   febbraio: [
     { data: "8 feb", nome: "Brunello Crossing", distanza: "45 km", tipo: "Trail", localita: "Montalcino" },
     { data: "8 feb", nome: "Maratonina de' 6 Ponti", distanza: "21 km", tipo: "Strada", localita: "Agliana" },
@@ -17,7 +25,7 @@ const gare = {
   ],
 };
 
-function GareTable({ gare, mese }: { gare: typeof gare.febbraio; mese: string }) {
+function GareTable({ gare, mese }: { gare: Gara[]; mese: string }) {
   return (
     <div className="mb-12">
       <h2 className="text-2xl font-bold mb-4 text-emerald-600">{mese} 2026</h2>
