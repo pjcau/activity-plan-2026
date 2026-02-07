@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/AuthContext";
 
 const links = [
   { href: "/", label: "Gare" },
@@ -13,12 +14,17 @@ const links = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  const allLinks = user
+    ? [...links, { href: "/le-mie-gare", label: "Le Mie Gare" }]
+    : links;
 
   return (
     <nav className="bg-emerald-800 border-b border-emerald-600">
       <div className="max-w-5xl mx-auto px-4">
         <div className="flex space-x-6">
-          {links.map((link) => (
+          {allLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
