@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import gareData from "../data/gare.json";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
+import { getDistanzaDaFirenze } from "@/lib/coordinate";
 
 type Fonte = "Calendario Podismo" | "US Nave";
 
 type Gara = {
+  id: number;
   data: string;
   nome: string;
   distanza: number;
@@ -14,98 +16,9 @@ type Gara = {
   localita: string;
   mese: number;
   fonti: Fonte[];
+  competitiva: boolean;
+  federazione: string;
 };
-
-const gare = gareData.gare as Gara[];
-const ultimoAggiornamento = gareData.ultimoAggiornamento;
-
-// Mesi disponibili nei dati (calcolati dinamicamente)
-const mesiDisponibili = [...new Set(gare.map((g) => g.mese))].sort((a, b) => a - b);
-
-// Coordinate Firenze
-const FIRENZE = { lat: 43.7696, lon: 11.2558 };
-
-// Coordinate localita toscane (lat, lon)
-const coordLocalita: Record<string, { lat: number; lon: number }> = {
-  "Firenze": { lat: 43.7696, lon: 11.2558 },
-  "Montalcino": { lat: 43.0588, lon: 11.4908 },
-  "Agliana": { lat: 43.9042, lon: 11.0069 },
-  "Sesto Fiorentino": { lat: 43.8325, lon: 11.2000 },
-  "Palazzuolo sul Senio": { lat: 44.1125, lon: 11.5467 },
-  "Venturina Terme": { lat: 43.0267, lon: 10.6033 },
-  "Scandicci": { lat: 43.7536, lon: 11.1892 },
-  "Castelnuovo Berardenga": { lat: 43.3467, lon: 11.5042 },
-  "Borgo San Lorenzo": { lat: 43.9542, lon: 11.3867 },
-  "Grosseto": { lat: 42.7633, lon: 11.1133 },
-  "Castiglione della Pescaia": { lat: 42.7642, lon: 10.8833 },
-  "Pisa": { lat: 43.7228, lon: 10.4017 },
-  "Pitigliano": { lat: 42.6347, lon: 11.6703 },
-  "Tavarnelle": { lat: 43.5567, lon: 11.1733 },
-  "Abbadia San Salvatore": { lat: 42.8817, lon: 11.6775 },
-  "Asciano": { lat: 43.2342, lon: 11.5600 },
-  "Lucca": { lat: 43.8429, lon: 10.5027 },
-  "Calci": { lat: 43.7250, lon: 10.5150 },
-  "Castelnuovo di Garfagnana": { lat: 44.1108, lon: 10.4117 },
-  "Scarperia": { lat: 43.9942, lon: 11.3547 },
-  "Empoli": { lat: 43.7192, lon: 10.9458 },
-  "Greve in Chianti": { lat: 43.5833, lon: 11.3167 },
-  "Lastra a Signa": { lat: 43.7700, lon: 11.1050 },
-  "Siena": { lat: 43.3188, lon: 11.3308 },
-  "Arezzo": { lat: 43.4633, lon: 11.8797 },
-  "Pistoia": { lat: 43.9333, lon: 10.9167 },
-  "Prato": { lat: 43.8808, lon: 11.0967 },
-  "Livorno": { lat: 43.5500, lon: 10.3167 },
-  "Massa": { lat: 44.0342, lon: 10.1392 },
-  "Carrara": { lat: 44.0792, lon: 10.0997 },
-  "Volterra": { lat: 43.4008, lon: 10.8606 },
-  "San Gimignano": { lat: 43.4678, lon: 11.0433 },
-  "Cortona": { lat: 43.2756, lon: 11.9858 },
-  "Montepulciano": { lat: 43.0992, lon: 11.7836 },
-  "Chiusi": { lat: 43.0167, lon: 11.9500 },
-  "Pienza": { lat: 43.0767, lon: 11.6789 },
-  "Orbetello": { lat: 42.4400, lon: 11.2133 },
-  "Porto Ercole": { lat: 42.3953, lon: 11.2061 },
-  "Pietrasanta": { lat: 43.9592, lon: 10.2275 },
-  "Seravezza": { lat: 43.9933, lon: 10.2283 },
-  "Poppi": { lat: 43.7200, lon: 11.7633 },
-  "Massa Marittima": { lat: 43.0500, lon: 10.8917 },
-  "Portoferraio": { lat: 42.8147, lon: 10.3192 },
-  "Loro Ciuffenna": { lat: 43.5928, lon: 11.6297 },
-  "Santa Fiora": { lat: 42.8317, lon: 11.5850 },
-  "Fiesole": { lat: 43.8064, lon: 11.2942 },
-  "Abetone": { lat: 44.1483, lon: 10.6600 },
-  "Pontremoli": { lat: 44.3758, lon: 9.8789 },
-  "Minucciano": { lat: 44.1700, lon: 10.2083 },
-  "Cetona": { lat: 42.9617, lon: 11.8000 },
-  "Monticiano": { lat: 43.1333, lon: 11.1833 },
-  "Donoratico": { lat: 43.1267, lon: 10.5967 },
-  "Montevarchi": { lat: 43.5231, lon: 11.5697 },
-  "Buonconvento": { lat: 43.1333, lon: 11.4833 },
-  "Poggibonsi": { lat: 43.4667, lon: 11.1500 },
-  "Radda in Chianti": { lat: 43.4867, lon: 11.3733 },
-  "Lido di Camaiore": { lat: 43.9167, lon: 10.2500 },
-};
-
-// Haversine: distanza in km tra due coordinate
-function haversineKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
-  const R = 6371;
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-  const dLon = ((b.lon - a.lon) * Math.PI) / 180;
-  const sinLat = Math.sin(dLat / 2);
-  const sinLon = Math.sin(dLon / 2);
-  const h = sinLat * sinLat + Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * sinLon * sinLon;
-  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
-}
-
-// Calcola distanza da Firenze per ogni localita (cache)
-const distanzaDaFirenze: Record<string, number> = {};
-for (const [nome, coord] of Object.entries(coordLocalita)) {
-  distanzaDaFirenze[nome] = Math.round(haversineKm(FIRENZE, coord));
-}
-
-function getDistanzaDaFirenze(localita: string): number | null {
-  return distanzaDaFirenze[localita] ?? null;
-}
 
 const mesiNomi: Record<number, string> = {
   1: "Gennaio",
@@ -126,6 +39,36 @@ const fonteBadge: Record<Fonte, { bg: string; text: string; short: string }> = {
   "Calendario Podismo": { bg: "bg-emerald-100", text: "text-emerald-700", short: "CP" },
   "US Nave": { bg: "bg-purple-100", text: "text-purple-700", short: "USN" },
 };
+
+const FILTERS_KEY = "gare-filtri";
+const FILTER_DEFAULTS = {
+  meseSelezionato: () => new Date().getMonth() + 1,
+  distanzaMin: 20,
+  distanzaMax: 80,
+  maxDistDaFirenze: 150,
+  fontiAttive: ["Calendario Podismo", "US Nave"] as Fonte[],
+  filtroCompetitiva: "tutte" as const,
+};
+
+type SavedFilters = {
+  meseSelezionato?: number;
+  distanzaMin?: number;
+  distanzaMax?: number;
+  maxDistDaFirenze?: number;
+  fontiAttive?: string[];
+  filtroCompetitiva?: string;
+  federazioniAttive?: string[];
+};
+
+function loadSavedFilters(): SavedFilters | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(FILTERS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 function FonteBadge({ fonte }: { fonte: Fonte }) {
   const { bg, text, short } = fonteBadge[fonte];
@@ -169,7 +112,9 @@ function GareTable({
     <>
       {Object.entries(garePerMese)
         .sort(([a], [b]) => Number(a) - Number(b))
-        .map(([mese, gareDelMese]) => (
+        .map(([mese, gareDelMese]) => {
+          gareDelMese.sort((a, b) => parseInt(a.data) - parseInt(b.data));
+          return (
           <div key={mese} className="mb-8">
             <h2 className="text-2xl font-bold mb-4 text-emerald-600">
               {mesiNomi[Number(mese)]} 2026
@@ -183,7 +128,7 @@ function GareTable({
                     <th className="p-3 text-left">Gara</th>
                     <th className="p-3 text-left">Distanza</th>
                     <th className="p-3 text-left">Tipo</th>
-                    <th className="p-3 text-left">Località</th>
+                    <th className="p-3 text-left">Localit&agrave;</th>
                     <th className="p-3 text-left">Da FI</th>
                     <th className="p-3 text-left">Fonte</th>
                   </tr>
@@ -192,7 +137,7 @@ function GareTable({
                   {gareDelMese.map((gara, i) => {
                     const saved = savedKeys?.has(garaKey(gara));
                     return (
-                      <tr key={i} className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                      <tr key={gara.id} className={`${i % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-emerald-50 transition-colors`}>
                         {showStar && (
                           <td className="p-3 border-b text-center">
                             <button
@@ -209,7 +154,26 @@ function GareTable({
                           </td>
                         )}
                         <td className="p-3 border-b">{gara.data}</td>
-                        <td className="p-3 border-b font-medium">{gara.nome}</td>
+                        <td className="p-3 border-b font-medium">
+                          <Link
+                            href={`/gare/${gara.id}`}
+                            className="text-emerald-700 hover:text-emerald-900 hover:underline"
+                          >
+                            {gara.nome}
+                          </Link>
+                          <div className="flex gap-1 mt-1">
+                            {gara.federazione && (
+                              <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                                {gara.federazione}
+                              </span>
+                            )}
+                            {!gara.competitiva && (
+                              <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">
+                                Non comp.
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="p-3 border-b">{gara.distanza} km</td>
                         <td className="p-3 border-b">
                           <span
@@ -226,7 +190,7 @@ function GareTable({
                         <td className="p-3 border-b text-sm text-gray-500">
                           {getDistanzaDaFirenze(gara.localita) !== null
                             ? `${getDistanzaDaFirenze(gara.localita)} km`
-                            : "—"}
+                            : "\u2014"}
                         </td>
                         <td className="p-3 border-b">
                           <div className="flex gap-1">
@@ -242,23 +206,83 @@ function GareTable({
               </table>
             </div>
           </div>
-        ))}
+          );
+        })}
     </>
   );
 }
 
 export default function Home() {
   const { user, supabase } = useAuth();
-  const [meseSelezionato, setMeseSelezionato] = useState<number>(() => new Date().getMonth() + 1);
+  const [gare, setGare] = useState<Gara[]>([]);
+  const [ultimoAggiornamento, setUltimoAggiornamento] = useState("");
+  const [loadingGare, setLoadingGare] = useState(true);
   const [mounted] = useState(() => typeof window !== "undefined");
-  const [distanzaMin, setDistanzaMin] = useState<number>(20);
-  const [distanzaMax, setDistanzaMax] = useState<number>(80);
-  const [maxDistDaFirenze, setMaxDistDaFirenze] = useState<number>(150);
+  const [initialFilters] = useState(loadSavedFilters);
+  const [meseSelezionato, setMeseSelezionato] = useState<number>(
+    initialFilters?.meseSelezionato ?? FILTER_DEFAULTS.meseSelezionato()
+  );
+  const [distanzaMin, setDistanzaMin] = useState<number>(
+    initialFilters?.distanzaMin ?? FILTER_DEFAULTS.distanzaMin
+  );
+  const [distanzaMax, setDistanzaMax] = useState<number>(
+    initialFilters?.distanzaMax ?? FILTER_DEFAULTS.distanzaMax
+  );
+  const [maxDistDaFirenze, setMaxDistDaFirenze] = useState<number>(
+    initialFilters?.maxDistDaFirenze ?? FILTER_DEFAULTS.maxDistDaFirenze
+  );
   const [fontiAttive, setFontiAttive] = useState<Set<Fonte>>(
-    new Set(["Calendario Podismo", "US Nave"])
+    new Set((initialFilters?.fontiAttive ?? FILTER_DEFAULTS.fontiAttive) as Fonte[])
+  );
+  const [filtroCompetitiva, setFiltroCompetitiva] = useState<"tutte" | "si" | "no">(
+    (initialFilters?.filtroCompetitiva as "tutte" | "si" | "no") ?? FILTER_DEFAULTS.filtroCompetitiva
+  );
+  const [federazioniAttive, setFederazioniAttive] = useState<Set<string>>(
+    new Set(initialFilters?.federazioniAttive ?? [])
   );
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
 
+  // Carica gare da Supabase
+  useEffect(() => {
+    if (!supabase) return;
+    const loadGare = async () => {
+      const [gareRes, metaRes] = await Promise.all([
+        supabase.from("gare").select("id, data, nome, distanza, tipo, localita, mese, fonti, competitiva, federazione").order("mese").order("data"),
+        supabase.from("metadata").select("value").eq("key", "ultimoAggiornamento").single(),
+      ]);
+      if (gareRes.data) setGare(gareRes.data as Gara[]);
+      if (metaRes.data) setUltimoAggiornamento(metaRes.data.value);
+      setLoadingGare(false);
+    };
+    loadGare();
+  }, [supabase]);
+
+  const mesiDisponibili = useMemo(
+    () => [...new Set(gare.map((g) => g.mese))].sort((a, b) => a - b),
+    [gare]
+  );
+
+  const federazioniDisponibili = useMemo(
+    () => [...new Set(gare.map((g) => g.federazione).filter(Boolean))].sort(),
+    [gare]
+  );
+
+  // Salva filtri in sessionStorage quando cambiano
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(FILTERS_KEY, JSON.stringify({
+        meseSelezionato,
+        distanzaMin,
+        distanzaMax,
+        maxDistDaFirenze,
+        fontiAttive: [...fontiAttive],
+        filtroCompetitiva,
+        federazioniAttive: [...federazioniAttive],
+      }));
+    } catch {}
+  }, [meseSelezionato, distanzaMin, distanzaMax, maxDistDaFirenze, fontiAttive, filtroCompetitiva, federazioniAttive]);
+
+  // Carica gare salvate dall'utente
   useEffect(() => {
     if (!user || !supabase) return;
     const load = async () => {
@@ -315,16 +339,55 @@ export default function Home() {
     });
   };
 
+  const toggleFederazione = (fed: string) => {
+    setFederazioniAttive((prev) => {
+      const next = new Set(prev);
+      if (next.has(fed)) {
+        next.delete(fed);
+      } else {
+        next.add(fed);
+      }
+      return next;
+    });
+  };
+
+  const hasNonDefaultFilters =
+    meseSelezionato !== FILTER_DEFAULTS.meseSelezionato() ||
+    distanzaMin !== FILTER_DEFAULTS.distanzaMin ||
+    distanzaMax !== FILTER_DEFAULTS.distanzaMax ||
+    maxDistDaFirenze !== FILTER_DEFAULTS.maxDistDaFirenze ||
+    filtroCompetitiva !== FILTER_DEFAULTS.filtroCompetitiva ||
+    fontiAttive.size !== FILTER_DEFAULTS.fontiAttive.length ||
+    federazioniAttive.size > 0;
+
+  const resetFiltri = () => {
+    setMeseSelezionato(FILTER_DEFAULTS.meseSelezionato());
+    setDistanzaMin(FILTER_DEFAULTS.distanzaMin);
+    setDistanzaMax(FILTER_DEFAULTS.distanzaMax);
+    setMaxDistDaFirenze(FILTER_DEFAULTS.maxDistDaFirenze);
+    setFontiAttive(new Set(FILTER_DEFAULTS.fontiAttive));
+    setFiltroCompetitiva(FILTER_DEFAULTS.filtroCompetitiva);
+    setFederazioniAttive(new Set());
+    sessionStorage.removeItem(FILTERS_KEY);
+  };
+
   const gareFiltrate = gare.filter((gara) => {
     const matchMese = meseSelezionato === 0 || gara.mese === meseSelezionato;
     const matchDistanza = gara.distanza >= distanzaMin && gara.distanza <= distanzaMax;
     const matchFonte = gara.fonti.some((f) => fontiAttive.has(f));
     const distFi = getDistanzaDaFirenze(gara.localita);
     const matchDistFirenze = distFi === null || distFi <= maxDistDaFirenze;
-    return matchMese && matchDistanza && matchFonte && matchDistFirenze;
+    const matchCompetitiva =
+      filtroCompetitiva === "tutte" ||
+      (filtroCompetitiva === "si" && gara.competitiva) ||
+      (filtroCompetitiva === "no" && !gara.competitiva);
+    const matchFederazione =
+      federazioniAttive.size === 0 ||
+      federazioniAttive.has(gara.federazione);
+    return matchMese && matchDistanza && matchFonte && matchDistFirenze && matchCompetitiva && matchFederazione;
   });
 
-  const dataAggiornamento = mounted
+  const dataAggiornamento = mounted && ultimoAggiornamento
     ? new Date(ultimoAggiornamento).toLocaleDateString("it-IT", {
         day: "numeric",
         month: "long",
@@ -339,8 +402,18 @@ export default function Home() {
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* Filtri */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Filtri</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Filtri</h2>
+            {hasNonDefaultFilters && (
+              <button
+                onClick={resetFiltri}
+                className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                Reset filtri
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Filtro Mese */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -405,7 +478,10 @@ export default function Home() {
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
               />
             </div>
+          </div>
 
+          {/* Seconda riga filtri */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             {/* Filtro Fonte */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -431,6 +507,56 @@ export default function Home() {
                 })}
               </div>
             </div>
+
+            {/* Filtro Competitiva */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Competitiva
+              </label>
+              <div className="flex flex-col gap-2">
+                {([
+                  { value: "tutte", label: "Tutte" },
+                  { value: "si", label: "Solo competitive" },
+                  { value: "no", label: "Solo non competitive" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setFiltroCompetitiva(opt.value)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-all ${
+                      filtroCompetitiva === opt.value
+                        ? "bg-red-100 text-red-700 border-red-300"
+                        : "bg-gray-100 text-gray-400 border-gray-200"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Filtro Federazione */}
+            {federazioniDisponibili.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Federazione
+                </label>
+                <div className="flex flex-col gap-2">
+                  {federazioniDisponibili.map((fed) => (
+                    <button
+                      key={fed}
+                      onClick={() => toggleFederazione(fed)}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-all ${
+                        federazioniAttive.has(fed)
+                          ? "bg-indigo-100 text-indigo-700 border-indigo-300"
+                          : "bg-gray-100 text-gray-400 border-gray-200"
+                      }`}
+                    >
+                      {fed}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Riepilogo filtri */}
@@ -452,11 +578,19 @@ export default function Home() {
         </div>
 
         {/* Tabella Gare */}
-        <GareTable
-          gare={gareFiltrate}
-          savedKeys={user ? savedKeys : undefined}
-          onToggle={user ? toggleGara : undefined}
-        />
+        {loadingGare ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 bg-gray-200 rounded animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <GareTable
+            gare={gareFiltrate}
+            savedKeys={user ? savedKeys : undefined}
+            onToggle={user ? toggleGara : undefined}
+          />
+        )}
       </main>
     </div>
   );

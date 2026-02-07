@@ -1,7 +1,23 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import ricetteData from "@/data/ricette.json";
+import { useState, useMemo, useEffect } from "react";
+import { useAuth } from "@/lib/AuthContext";
+
+type Ricetta = {
+  id: number;
+  nome: string;
+  categoria: string;
+  tempo_preparazione: string;
+  porzioni: number;
+  calorie: number;
+  proteine: number;
+  carboidrati: number;
+  grassi: number;
+  fibre: number;
+  ingredienti: { nome: string; quantita: string }[];
+  tags: string[];
+  istruzioni: string;
+};
 
 const categorie = [
   { value: "", label: "Tutte" },
@@ -14,32 +30,44 @@ const categorie = [
 ];
 
 export default function Ricette() {
+  const { supabase } = useAuth();
+  const [ricette, setRicette] = useState<Ricetta[]>([]);
+  const [loading, setLoading] = useState(true);
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [tagSelezionati, setTagSelezionati] = useState<string[]>([]);
   const [ricercaTesto, setRicercaTesto] = useState("");
   const [ricettaAperta, setRicettaAperta] = useState<number | null>(null);
+  const [ordinamento, setOrdinamento] = useState<{
+    campo: "proteine" | "carboidrati" | "grassi" | "fibre" | "";
+    direzione: "asc" | "desc";
+  }>({ campo: "", direzione: "desc" });
+
+  useEffect(() => {
+    if (!supabase) return;
+    const load = async () => {
+      const { data } = await supabase.from("ricette").select("*").order("id");
+      if (data) setRicette(data as Ricetta[]);
+      setLoading(false);
+    };
+    load();
+  }, [supabase]);
 
   // Estrai tutti i tag unici e ordinali
   const tuttiTag = useMemo(() => {
     const tagSet = new Set<string>();
-    ricetteData.ricette.forEach((r) => r.tags.forEach((t) => tagSet.add(t)));
+    ricette.forEach((r) => r.tags.forEach((t) => tagSet.add(t)));
     return Array.from(tagSet).sort((a, b) => a.localeCompare(b, "it"));
-  }, []);
+  }, [ricette]);
 
-  // Filtra le ricette
+  // Filtra e ordina le ricette
   const ricetteFiltrate = useMemo(() => {
-    return ricetteData.ricette.filter((r) => {
-      // Filtro categoria
+    const filtrate = ricette.filter((r) => {
       if (categoriaFiltro && r.categoria !== categoriaFiltro) return false;
-
-      // Filtro tag (AND: la ricetta deve avere TUTTI i tag selezionati)
       if (
         tagSelezionati.length > 0 &&
         !tagSelezionati.every((tag) => r.tags.includes(tag))
       )
         return false;
-
-      // Filtro testo
       if (ricercaTesto) {
         const testo = ricercaTesto.toLowerCase();
         const match =
@@ -48,10 +76,17 @@ export default function Ricette() {
           r.tags.some((t) => t.toLowerCase().includes(testo));
         if (!match) return false;
       }
-
       return true;
     });
-  }, [categoriaFiltro, tagSelezionati, ricercaTesto]);
+    if (ordinamento.campo) {
+      filtrate.sort((a, b) => {
+        const va = a[ordinamento.campo as keyof Ricetta] as number;
+        const vb = b[ordinamento.campo as keyof Ricetta] as number;
+        return ordinamento.direzione === "desc" ? vb - va : va - vb;
+      });
+    }
+    return filtrate;
+  }, [ricette, categoriaFiltro, tagSelezionati, ricercaTesto, ordinamento]);
 
   const toggleTag = (tag: string) => {
     setTagSelezionati((prev) =>
@@ -63,6 +98,17 @@ export default function Ricette() {
     setCategoriaFiltro("");
     setTagSelezionati([]);
     setRicercaTesto("");
+    setOrdinamento({ campo: "", direzione: "desc" });
+  };
+
+  const toggleOrdinamento = (campo: "proteine" | "carboidrati" | "grassi" | "fibre") => {
+    setOrdinamento((prev) => {
+      if (prev.campo === campo) {
+        if (prev.direzione === "desc") return { campo, direzione: "asc" };
+        return { campo: "", direzione: "desc" };
+      }
+      return { campo, direzione: "desc" };
+    });
   };
 
   const getCategoriaLabel = (cat: string) => {
@@ -89,6 +135,20 @@ export default function Ricette() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <main className="max-w-5xl mx-auto px-4 py-8">
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="max-w-5xl mx-auto px-4 py-8">
@@ -98,9 +158,9 @@ export default function Ricette() {
             Ricette Plant-Based per Atleti
           </h1>
           <p className="text-gray-600">
-            60 ricette dal libro{" "}
+            {ricette.length} ricette dal libro{" "}
             <span className="font-semibold">
-              &quot;{ricetteData.fonte}&quot;
+              &quot;The Plant-Based Athlete &mdash; Matt Frazier &amp; Robert Cheeke&quot;
             </span>
             . Filtra per categoria o ingrediente per trovare la ricetta perfetta
             per il tuo allenamento.
@@ -113,7 +173,8 @@ export default function Ricette() {
             <h2 className="text-lg font-bold text-emerald-700">Filtri</h2>
             {(categoriaFiltro ||
               tagSelezionati.length > 0 ||
-              ricercaTesto) && (
+              ricercaTesto ||
+              ordinamento.campo) && (
               <button
                 onClick={resetFiltri}
                 className="text-sm text-red-600 hover:text-red-800 cursor-pointer"
@@ -157,7 +218,7 @@ export default function Ricette() {
           </div>
 
           {/* Tag ingredienti */}
-          <div>
+          <div className="mb-4">
             <label className="text-sm font-medium text-gray-700 mb-2 block">
               Ingredienti ({tagSelezionati.length} selezionati)
             </label>
@@ -176,6 +237,72 @@ export default function Ricette() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Ordinamento per macronutrienti */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              Ordina per macronutrienti
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => toggleOrdinamento("proteine")}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer flex items-center gap-1 ${
+                  ordinamento.campo === "proteine"
+                    ? "bg-blue-600 text-white"
+                    : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                }`}
+              >
+                Proteine
+                {ordinamento.campo === "proteine" && (
+                  <span className="text-xs">{ordinamento.direzione === "desc" ? "\u2193" : "\u2191"}</span>
+                )}
+              </button>
+              <button
+                onClick={() => toggleOrdinamento("carboidrati")}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer flex items-center gap-1 ${
+                  ordinamento.campo === "carboidrati"
+                    ? "bg-amber-600 text-white"
+                    : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                }`}
+              >
+                Carboidrati
+                {ordinamento.campo === "carboidrati" && (
+                  <span className="text-xs">{ordinamento.direzione === "desc" ? "\u2193" : "\u2191"}</span>
+                )}
+              </button>
+              <button
+                onClick={() => toggleOrdinamento("grassi")}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer flex items-center gap-1 ${
+                  ordinamento.campo === "grassi"
+                    ? "bg-red-600 text-white"
+                    : "bg-red-100 text-red-700 hover:bg-red-200"
+                }`}
+              >
+                Grassi
+                {ordinamento.campo === "grassi" && (
+                  <span className="text-xs">{ordinamento.direzione === "desc" ? "\u2193" : "\u2191"}</span>
+                )}
+              </button>
+              <button
+                onClick={() => toggleOrdinamento("fibre")}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer flex items-center gap-1 ${
+                  ordinamento.campo === "fibre"
+                    ? "bg-green-600 text-white"
+                    : "bg-green-100 text-green-700 hover:bg-green-200"
+                }`}
+              >
+                Fibre
+                {ordinamento.campo === "fibre" && (
+                  <span className="text-xs">{ordinamento.direzione === "desc" ? "\u2193" : "\u2191"}</span>
+                )}
+              </button>
+            </div>
+            {ordinamento.campo && (
+              <p className="text-xs text-gray-500 mt-1">
+                Ordinate per {ordinamento.campo} ({ordinamento.direzione === "desc" ? "pi\u00f9 alto prima" : "pi\u00f9 basso prima"}) &mdash; clicca di nuovo per invertire, un terzo click per rimuovere
+              </p>
+            )}
           </div>
         </div>
 
@@ -207,7 +334,7 @@ export default function Ricette() {
 
                 {/* Info rapide */}
                 <div className="flex flex-wrap gap-3 text-sm text-gray-600 mb-4">
-                  <span>&#9201; {ricetta.tempoPreparazione}</span>
+                  <span>&#9201; {ricetta.tempo_preparazione}</span>
                   <span>&#127860; {ricetta.porzioni} porz.</span>
                   <span>{ricetta.calorie} kcal</span>
                 </div>
