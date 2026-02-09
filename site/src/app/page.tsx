@@ -40,6 +40,20 @@ const fonteBadge: Record<Fonte, { bg: string; text: string; short: string }> = {
   "US Nave": { bg: "bg-purple-100", text: "text-purple-700", short: "USN" },
 };
 
+const MESI_SHORT_TO_NUM: Record<string, number> = {
+  gen: 0, feb: 1, mar: 2, apr: 3, mag: 4, giu: 5,
+  lug: 6, ago: 7, set: 8, ott: 9, nov: 10, dic: 11,
+};
+
+function parseDataGara(data: string): Date | null {
+  const parts = data.trim().split(/\s+/);
+  if (parts.length < 2) return null;
+  const giorno = parseInt(parts[0]);
+  const mese = MESI_SHORT_TO_NUM[parts[1].toLowerCase()];
+  if (!giorno || mese === undefined) return null;
+  return new Date(2026, mese, giorno);
+}
+
 const FILTERS_KEY = "gare-filtri";
 const FILTER_DEFAULTS = {
   meseSelezionato: () => new Date().getMonth() + 1,
@@ -48,6 +62,7 @@ const FILTER_DEFAULTS = {
   maxDistDaFirenze: 150,
   fontiAttive: ["Calendario Podismo", "US Nave"] as Fonte[],
   filtroCompetitiva: "tutte" as const,
+  nascondiPassate: true,
 };
 
 type SavedFilters = {
@@ -58,6 +73,7 @@ type SavedFilters = {
   fontiAttive?: string[];
   filtroCompetitiva?: string;
   federazioniAttive?: string[];
+  nascondiPassate?: boolean;
 };
 
 function loadSavedFilters(): SavedFilters | null {
@@ -240,6 +256,9 @@ export default function Home() {
   const [federazioniAttive, setFederazioniAttive] = useState<Set<string>>(
     new Set(initialFilters?.federazioniAttive ?? [])
   );
+  const [nascondiPassate, setNascondiPassate] = useState<boolean>(
+    initialFilters?.nascondiPassate ?? FILTER_DEFAULTS.nascondiPassate
+  );
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
 
   // Carica gare da Supabase
@@ -278,9 +297,10 @@ export default function Home() {
         fontiAttive: [...fontiAttive],
         filtroCompetitiva,
         federazioniAttive: [...federazioniAttive],
+        nascondiPassate,
       }));
     } catch {}
-  }, [meseSelezionato, distanzaMin, distanzaMax, maxDistDaFirenze, fontiAttive, filtroCompetitiva, federazioniAttive]);
+  }, [meseSelezionato, distanzaMin, distanzaMax, maxDistDaFirenze, fontiAttive, filtroCompetitiva, federazioniAttive, nascondiPassate]);
 
   // Carica gare salvate dall'utente
   useEffect(() => {
@@ -358,7 +378,8 @@ export default function Home() {
     maxDistDaFirenze !== FILTER_DEFAULTS.maxDistDaFirenze ||
     filtroCompetitiva !== FILTER_DEFAULTS.filtroCompetitiva ||
     fontiAttive.size !== FILTER_DEFAULTS.fontiAttive.length ||
-    federazioniAttive.size > 0;
+    federazioniAttive.size > 0 ||
+    nascondiPassate !== FILTER_DEFAULTS.nascondiPassate;
 
   const resetFiltri = () => {
     setMeseSelezionato(FILTER_DEFAULTS.meseSelezionato());
@@ -368,10 +389,21 @@ export default function Home() {
     setFontiAttive(new Set(FILTER_DEFAULTS.fontiAttive));
     setFiltroCompetitiva(FILTER_DEFAULTS.filtroCompetitiva);
     setFederazioniAttive(new Set());
+    setNascondiPassate(FILTER_DEFAULTS.nascondiPassate);
     sessionStorage.removeItem(FILTERS_KEY);
   };
 
+  const oggi = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
   const gareFiltrate = gare.filter((gara) => {
+    if (nascondiPassate) {
+      const dataGara = parseDataGara(gara.data);
+      if (dataGara && dataGara < oggi) return false;
+    }
     const matchMese = meseSelezionato === 0 || gara.mese === meseSelezionato;
     const matchDistanza = gara.distanza >= distanzaMin && gara.distanza <= distanzaMax;
     const matchFonte = gara.fonti.some((f) => fontiAttive.has(f));
@@ -557,6 +589,23 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+            {/* Nascondi gare passate */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gare passate
+              </label>
+              <button
+                onClick={() => setNascondiPassate((v) => !v)}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-all ${
+                  nascondiPassate
+                    ? "bg-amber-100 text-amber-700 border-amber-300"
+                    : "bg-gray-100 text-gray-400 border-gray-200"
+                }`}
+              >
+                {nascondiPassate ? "Nascoste" : "Visibili"}
+              </button>
+            </div>
           </div>
 
           {/* Riepilogo filtri */}
