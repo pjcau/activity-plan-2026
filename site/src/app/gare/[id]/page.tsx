@@ -47,12 +47,12 @@ export default function GaraDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
         <main className="max-w-5xl mx-auto px-4 py-8">
           <div className="space-y-4">
-            <div className="h-8 w-64 bg-gray-200 rounded animate-pulse" />
-            <div className="h-64 bg-gray-200 rounded-lg animate-pulse" />
-            <div className="h-96 bg-gray-200 rounded-lg animate-pulse" />
+            <div className="h-8 w-64 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+            <div className="h-64 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
+            <div className="h-96 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
           </div>
         </main>
       </div>
@@ -61,10 +61,10 @@ export default function GaraDetail() {
 
   if (!gara) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
         <main className="max-w-5xl mx-auto px-4 py-16 text-center">
-          <h2 className="text-2xl font-bold text-gray-700 mb-4">Gara non trovata</h2>
-          <Link href="/" className="text-emerald-600 hover:text-emerald-800 font-medium">
+          <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-4">Gara non trovata</h2>
+          <Link href="/" className="text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium">
             Torna alle gare
           </Link>
         </main>
@@ -76,35 +76,35 @@ export default function GaraDetail() {
   const distFi = getDistanzaDaFirenze(gara.localita);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <div className="mb-6">
-          <Link href="/" className="text-emerald-600 hover:text-emerald-800 text-sm font-medium">
+          <Link href="/" className="text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 text-sm font-medium">
             &larr; Tutte le gare
           </Link>
         </div>
 
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-6 transition-colors">
           <div className="flex flex-wrap items-start gap-3 mb-4">
-            <h1 className="text-3xl font-bold text-gray-800 flex-1">{gara.nome}</h1>
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex-1">{gara.nome}</h1>
             <span
               className={`px-3 py-1 rounded-full text-sm font-medium ${
                 gara.tipo === "Trail"
-                  ? "bg-orange-100 text-orange-700"
-                  : "bg-blue-100 text-blue-700"
+                  ? "bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300"
+                  : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
               }`}
             >
               {gara.tipo}
             </span>
             {gara.federazione && (
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700">
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
                 {gara.federazione}
               </span>
             )}
             {gara.competitiva && (
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300">
                 Competitiva
               </span>
             )}
@@ -112,22 +112,22 @@ export default function GaraDetail() {
 
           {/* Info griglia */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <div className="bg-gray-50 rounded-lg p-3 text-center">
-              <div className="text-xs text-gray-500 mb-1">Data</div>
-              <div className="text-lg font-bold text-gray-800">{gara.data}</div>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-center">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Data</div>
+              <div className="text-lg font-bold text-gray-800 dark:text-gray-100">{gara.data}</div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3 text-center">
-              <div className="text-xs text-gray-500 mb-1">Distanza</div>
-              <div className="text-lg font-bold text-gray-800">{gara.distanza} km</div>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-center">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Distanza</div>
+              <div className="text-lg font-bold text-gray-800 dark:text-gray-100">{gara.distanza} km</div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3 text-center">
-              <div className="text-xs text-gray-500 mb-1">Localit&agrave;</div>
-              <div className="text-lg font-bold text-gray-800">{gara.localita}</div>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-center">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Localit&agrave;</div>
+              <div className="text-lg font-bold text-gray-800 dark:text-gray-100">{gara.localita}</div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3 text-center">
-              <div className="text-xs text-gray-500 mb-1">Da Firenze</div>
-              <div className="text-lg font-bold text-gray-800">
-                {distFi !== null ? `${distFi} km` : "—"}
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-center">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Da Firenze</div>
+              <div className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                {distFi !== null ? `${distFi} km` : "\u2014"}
               </div>
             </div>
           </div>
@@ -139,8 +139,8 @@ export default function GaraDetail() {
                 key={f}
                 className={`px-2 py-1 rounded text-xs font-medium ${
                   f === "Calendario Podismo"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-purple-100 text-purple-700"
+                    ? "bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300"
+                    : "bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300"
                 }`}
               >
                 {f}
@@ -151,8 +151,8 @@ export default function GaraDetail() {
 
         {/* Link e azioni */}
         {(gara.link_sito || gara.link_iscrizione || gara.pdf_url) && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-3">Link</h2>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-6 transition-colors">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">Link</h2>
             <div className="flex flex-wrap gap-3">
               {gara.link_sito && (
                 <a
@@ -190,9 +190,9 @@ export default function GaraDetail() {
 
         {/* Descrizione */}
         {gara.descrizione && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-3">Descrizione</h2>
-            <p className="text-gray-600 leading-relaxed">{gara.descrizione}</p>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-6 transition-colors">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">Descrizione</h2>
+            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{gara.descrizione}</p>
           </div>
         )}
 
@@ -207,8 +207,8 @@ export default function GaraDetail() {
           }
           if (allImgs.length === 0) return null;
           return (
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-3">Immagini</h2>
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-6 transition-colors">
+              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">Immagini</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {allImgs.map((url, i) => (
                   <img
@@ -225,8 +225,8 @@ export default function GaraDetail() {
 
         {/* Mappa */}
         {coord && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-3">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-6 transition-colors">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">
               Posizione: {gara.localita}
             </h2>
             <div className="rounded-lg overflow-hidden">
@@ -245,7 +245,7 @@ export default function GaraDetail() {
               href={`https://www.google.com/maps/search/?api=1&query=${coord.lat},${coord.lon}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block mt-3 text-sm text-emerald-600 hover:text-emerald-800 font-medium"
+              className="inline-block mt-3 text-sm text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium"
             >
               Apri in Google Maps &#8599;
             </a>

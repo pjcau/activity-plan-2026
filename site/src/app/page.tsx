@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import { getDistanzaDaFirenze } from "@/lib/coordinate";
@@ -36,8 +36,8 @@ const mesiNomi: Record<number, string> = {
 };
 
 const fonteBadge: Record<Fonte, { bg: string; text: string; short: string }> = {
-  "Calendario Podismo": { bg: "bg-emerald-100", text: "text-emerald-700", short: "CP" },
-  "US Nave": { bg: "bg-purple-100", text: "text-purple-700", short: "USN" },
+  "Calendario Podismo": { bg: "bg-emerald-100 dark:bg-emerald-900", text: "text-emerald-700 dark:text-emerald-300", short: "CP" },
+  "US Nave": { bg: "bg-purple-100 dark:bg-purple-900", text: "text-purple-700 dark:text-purple-300", short: "USN" },
 };
 
 const MESI_SHORT_TO_NUM: Record<string, number> = {
@@ -110,7 +110,7 @@ function GareTable({
 }) {
   if (gare.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
         Nessuna gara trovata con i filtri selezionati
       </div>
     );
@@ -132,13 +132,13 @@ function GareTable({
           gareDelMese.sort((a, b) => parseInt(a.data) - parseInt(b.data));
           return (
           <div key={mese} className="mb-8">
-            <h2 className="text-2xl font-bold mb-4 text-emerald-600">
+            <h2 className="text-2xl font-bold mb-4 text-emerald-600 dark:text-emerald-400">
               {mesiNomi[Number(mese)]} 2026
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="bg-emerald-600 text-white">
+                  <tr className="bg-emerald-600 dark:bg-emerald-900 text-white">
                     {showStar && <th className="p-3 w-10"></th>}
                     <th className="p-3 text-left">Data</th>
                     <th className="p-3 text-left">Gara</th>
@@ -153,15 +153,15 @@ function GareTable({
                   {gareDelMese.map((gara, i) => {
                     const saved = savedKeys?.has(garaKey(gara));
                     return (
-                      <tr key={gara.id} className={`${i % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-emerald-50 transition-colors`}>
+                      <tr key={gara.id} className={`${i % 2 === 0 ? "bg-gray-50 dark:bg-gray-800/50" : "bg-white dark:bg-gray-900"} hover:bg-emerald-50 dark:hover:bg-gray-800 transition-colors`}>
                         {showStar && (
-                          <td className="p-3 border-b text-center">
+                          <td className="p-3 border-b dark:border-gray-700 text-center">
                             <button
                               onClick={() => onToggle(gara)}
                               className={`text-xl transition-colors ${
                                 saved
                                   ? "text-yellow-500 hover:text-yellow-600"
-                                  : "text-gray-300 hover:text-yellow-400"
+                                  : "text-gray-300 dark:text-gray-600 hover:text-yellow-400"
                               }`}
                               title={saved ? "Rimuovi dalle mie gare" : "Aggiungi alle mie gare"}
                             >
@@ -169,46 +169,46 @@ function GareTable({
                             </button>
                           </td>
                         )}
-                        <td className="p-3 border-b">{gara.data}</td>
-                        <td className="p-3 border-b font-medium">
+                        <td className="p-3 border-b dark:border-gray-700 dark:text-gray-300">{gara.data}</td>
+                        <td className="p-3 border-b dark:border-gray-700 font-medium">
                           <Link
                             href={`/gare/${gara.id}`}
-                            className="text-emerald-700 hover:text-emerald-900 hover:underline"
+                            className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 hover:underline"
                           >
                             {gara.nome}
                           </Link>
                           <div className="flex gap-1 mt-1">
                             {gara.federazione && (
-                              <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                              <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
                                 {gara.federazione}
                               </span>
                             )}
                             {!gara.competitiva && (
-                              <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">
+                              <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                                 Non comp.
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="p-3 border-b">{gara.distanza} km</td>
-                        <td className="p-3 border-b">
+                        <td className="p-3 border-b dark:border-gray-700 dark:text-gray-300">{gara.distanza} km</td>
+                        <td className="p-3 border-b dark:border-gray-700">
                           <span
                             className={`px-2 py-1 rounded text-sm ${
                               gara.tipo === "Trail"
-                                ? "bg-orange-100 text-orange-700"
-                                : "bg-blue-100 text-blue-700"
+                                ? "bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300"
+                                : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
                             }`}
                           >
                             {gara.tipo}
                           </span>
                         </td>
-                        <td className="p-3 border-b">{gara.localita}</td>
-                        <td className="p-3 border-b text-sm text-gray-500">
+                        <td className="p-3 border-b dark:border-gray-700 dark:text-gray-300">{gara.localita}</td>
+                        <td className="p-3 border-b dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
                           {getDistanzaDaFirenze(gara.localita) !== null
                             ? `${getDistanzaDaFirenze(gara.localita)} km`
                             : "\u2014"}
                         </td>
-                        <td className="p-3 border-b">
+                        <td className="p-3 border-b dark:border-gray-700">
                           <div className="flex gap-1">
                             {gara.fonti.map((f) => (
                               <FonteBadge key={f} fonte={f} />
@@ -233,7 +233,7 @@ export default function Home() {
   const [gare, setGare] = useState<Gara[]>([]);
   const [ultimoAggiornamento, setUltimoAggiornamento] = useState("");
   const [loadingGare, setLoadingGare] = useState(true);
-  const [mounted] = useState(() => typeof window !== "undefined");
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [initialFilters] = useState(loadSavedFilters);
   const [meseSelezionato, setMeseSelezionato] = useState<number>(
     initialFilters?.meseSelezionato ?? FILTER_DEFAULTS.meseSelezionato()
@@ -430,16 +430,16 @@ export default function Home() {
     : "";
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* Filtri */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-8 transition-colors">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Filtri</h2>
-            {hasNonDefaultFilters && (
+            <h2 className="text-xl font-semibold dark:text-gray-100">Filtri</h2>
+            {mounted && hasNonDefaultFilters && (
               <button
                 onClick={resetFiltri}
-                className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                className="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors"
               >
                 Reset filtri
               </button>
@@ -448,13 +448,13 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Filtro Mese */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Mese
               </label>
               <select
                 value={meseSelezionato}
                 onChange={(e) => setMeseSelezionato(Number(e.target.value))}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value={0}>Tutti i mesi</option>
                 {mesiDisponibili.map((num) => (
@@ -467,7 +467,7 @@ export default function Home() {
 
             {/* Filtro Distanza Min */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Distanza minima: {distanzaMin} km
               </label>
               <input
@@ -476,13 +476,13 @@ export default function Home() {
                 max="80"
                 value={distanzaMin}
                 onChange={(e) => setDistanzaMin(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
               />
             </div>
 
             {/* Filtro Distanza Max */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Distanza massima: {distanzaMax} km
               </label>
               <input
@@ -491,13 +491,13 @@ export default function Home() {
                 max="100"
                 value={distanzaMax}
                 onChange={(e) => setDistanzaMax(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
               />
             </div>
 
             {/* Filtro Distanza da Firenze */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Max da Firenze: {maxDistDaFirenze} km
               </label>
               <input
@@ -507,7 +507,7 @@ export default function Home() {
                 step="10"
                 value={maxDistDaFirenze}
                 onChange={(e) => setMaxDistDaFirenze(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
               />
             </div>
           </div>
@@ -516,7 +516,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             {/* Filtro Fonte */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Fonte dati
               </label>
               <div className="flex flex-col gap-2">
@@ -530,7 +530,7 @@ export default function Home() {
                       className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-all ${
                         active
                           ? `${bg} ${text} border-current`
-                          : "bg-gray-100 text-gray-400 border-gray-200"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-600"
                       }`}
                     >
                       {fonte}
@@ -542,7 +542,7 @@ export default function Home() {
 
             {/* Filtro Competitiva */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Competitiva
               </label>
               <div className="flex flex-col gap-2">
@@ -556,8 +556,8 @@ export default function Home() {
                     onClick={() => setFiltroCompetitiva(opt.value)}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-all ${
                       filtroCompetitiva === opt.value
-                        ? "bg-red-100 text-red-700 border-red-300"
-                        : "bg-gray-100 text-gray-400 border-gray-200"
+                        ? "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-600"
                     }`}
                   >
                     {opt.label}
@@ -569,7 +569,7 @@ export default function Home() {
             {/* Filtro Federazione */}
             {federazioniDisponibili.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Federazione
                 </label>
                 <div className="flex flex-col gap-2">
@@ -579,8 +579,8 @@ export default function Home() {
                       onClick={() => toggleFederazione(fed)}
                       className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-all ${
                         federazioniAttive.has(fed)
-                          ? "bg-indigo-100 text-indigo-700 border-indigo-300"
-                          : "bg-gray-100 text-gray-400 border-gray-200"
+                          ? "bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-600"
                       }`}
                     >
                       {fed}
@@ -592,15 +592,15 @@ export default function Home() {
 
             {/* Nascondi gare passate */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Gare passate
               </label>
               <button
                 onClick={() => setNascondiPassate((v) => !v)}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-all ${
                   nascondiPassate
-                    ? "bg-amber-100 text-amber-700 border-amber-300"
-                    : "bg-gray-100 text-gray-400 border-gray-200"
+                    ? "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-600"
                 }`}
               >
                 {nascondiPassate ? "Nascoste" : "Visibili"}
@@ -609,16 +609,16 @@ export default function Home() {
           </div>
 
           {/* Riepilogo filtri */}
-          <div className="mt-4 pt-4 border-t border-gray-200 flex flex-wrap items-center gap-x-4 gap-y-1">
-            <p className="text-sm text-gray-600">
-              Mostrando <span className="font-semibold text-emerald-600">{gareFiltrate.length}</span> gare
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Mostrando <span className="font-semibold text-emerald-600 dark:text-emerald-400">{gareFiltrate.length}</span> gare
               {meseSelezionato > 0 && <> di <span className="font-semibold">{mesiNomi[meseSelezionato]}</span></>}
               {" "}tra <span className="font-semibold">{distanzaMin} km</span> e <span className="font-semibold">{distanzaMax} km</span>
               {" "}entro <span className="font-semibold">{maxDistDaFirenze} km</span> da Firenze
             </p>
-            <div className="flex gap-3 text-xs text-gray-500">
-              <span><span className="font-semibold text-emerald-700">CP</span> = Calendario Podismo</span>
-              <span><span className="font-semibold text-purple-700">USN</span> = US Nave</span>
+            <div className="flex gap-3 text-xs text-gray-500 dark:text-gray-400">
+              <span><span className="font-semibold text-emerald-700 dark:text-emerald-400">CP</span> = Calendario Podismo</span>
+              <span><span className="font-semibold text-purple-700 dark:text-purple-400">USN</span> = US Nave</span>
             </div>
           </div>
           <p className="mt-2 text-xs text-gray-400" suppressHydrationWarning>
@@ -630,7 +630,7 @@ export default function Home() {
         {loadingGare ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded animate-pulse" />
+              <div key={i} className="h-16 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
             ))}
           </div>
         ) : (

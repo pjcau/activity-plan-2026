@@ -119,29 +119,29 @@ export default function Ricette() {
   const getCategoriaColor = (cat: string) => {
     switch (cat) {
       case "colazione":
-        return "bg-amber-100 text-amber-800";
+        return "bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200";
       case "pranzo":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200";
       case "cena":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200";
       case "snack":
-        return "bg-orange-100 text-orange-800";
+        return "bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200";
       case "pre-workout":
-        return "bg-teal-100 text-teal-800";
+        return "bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200";
       case "post-workout":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200";
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
         <main className="max-w-5xl mx-auto px-4 py-8">
           <div className="space-y-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+              <div key={i} className="h-32 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
             ))}
           </div>
         </main>
@@ -150,14 +150,14 @@ export default function Ricette() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-8 transition-colors">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
             Ricette Plant-Based per Atleti
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             {ricette.length} ricette dal libro{" "}
             <span className="font-semibold">
               &quot;The Plant-Based Athlete &mdash; Matt Frazier &amp; Robert Cheeke&quot;
@@ -168,16 +168,16 @@ export default function Ricette() {
         </div>
 
         {/* Filtri */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-8 transition-colors">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-emerald-700">Filtri</h2>
+            <h2 className="text-lg font-bold text-emerald-700 dark:text-emerald-400">Filtri</h2>
             {(categoriaFiltro ||
               tagSelezionati.length > 0 ||
               ricercaTesto ||
               ordinamento.campo) && (
               <button
                 onClick={resetFiltri}
-                className="text-sm text-red-600 hover:text-red-800 cursor-pointer"
+                className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 cursor-pointer"
               >
                 Resetta filtri
               </button>
@@ -191,13 +191,13 @@ export default function Ricette() {
               placeholder="Cerca per nome o ingrediente..."
               value={ricercaTesto}
               onChange={(e) => setRicercaTesto(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             />
           </div>
 
           {/* Categorie */}
           <div className="mb-4">
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
               Categoria
             </label>
             <div className="flex flex-wrap gap-2">
@@ -208,7 +208,7 @@ export default function Ricette() {
                   className={`px-3 py-1 rounded-full text-sm font-medium transition-colors cursor-pointer ${
                     categoriaFiltro === cat.value
                       ? "bg-emerald-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
                   }`}
                 >
                   {cat.label}
@@ -219,7 +219,7 @@ export default function Ricette() {
 
           {/* Tag ingredienti */}
           <div className="mb-4">
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
               Ingredienti ({tagSelezionati.length} selezionati)
             </label>
             <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
@@ -230,7 +230,7 @@ export default function Ricette() {
                   className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                     tagSelezionati.includes(tag)
                       ? "bg-emerald-600 text-white"
-                      : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                      : "bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800"
                   }`}
                 >
                   {tag}
@@ -241,7 +241,7 @@ export default function Ricette() {
 
           {/* Ordinamento per macronutrienti */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
               Ordina per macronutrienti
             </label>
             <div className="flex flex-wrap gap-2">
@@ -250,7 +250,7 @@ export default function Ricette() {
                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer flex items-center gap-1 ${
                   ordinamento.campo === "proteine"
                     ? "bg-blue-600 text-white"
-                    : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                    : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800"
                 }`}
               >
                 Proteine
@@ -263,7 +263,7 @@ export default function Ricette() {
                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer flex items-center gap-1 ${
                   ordinamento.campo === "carboidrati"
                     ? "bg-amber-600 text-white"
-                    : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                    : "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800"
                 }`}
               >
                 Carboidrati
@@ -276,7 +276,7 @@ export default function Ricette() {
                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer flex items-center gap-1 ${
                   ordinamento.campo === "grassi"
                     ? "bg-red-600 text-white"
-                    : "bg-red-100 text-red-700 hover:bg-red-200"
+                    : "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800"
                 }`}
               >
                 Grassi
@@ -289,7 +289,7 @@ export default function Ricette() {
                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer flex items-center gap-1 ${
                   ordinamento.campo === "fibre"
                     ? "bg-green-600 text-white"
-                    : "bg-green-100 text-green-700 hover:bg-green-200"
+                    : "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800"
                 }`}
               >
                 Fibre
@@ -299,7 +299,7 @@ export default function Ricette() {
               </button>
             </div>
             {ordinamento.campo && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Ordinate per {ordinamento.campo} ({ordinamento.direzione === "desc" ? "pi\u00f9 alto prima" : "pi\u00f9 basso prima"}) &mdash; clicca di nuovo per invertire, un terzo click per rimuovere
               </p>
             )}
@@ -307,7 +307,7 @@ export default function Ricette() {
         </div>
 
         {/* Conteggio risultati */}
-        <div className="mb-4 text-sm text-gray-600">
+        <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
           {ricetteFiltrate.length} ricett{ricetteFiltrate.length === 1 ? "a" : "e"}{" "}
           trovat{ricetteFiltrate.length === 1 ? "a" : "e"}
         </div>
@@ -317,12 +317,12 @@ export default function Ricette() {
           {ricetteFiltrate.map((ricetta) => (
             <div
               key={ricetta.id}
-              className="bg-white rounded-lg shadow-lg overflow-hidden"
+              className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden transition-colors"
             >
               {/* Header ricetta */}
               <div className="p-6">
                 <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-gray-800 flex-1 mr-2">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex-1 mr-2">
                     {ricetta.nome}
                   </h3>
                   <span
@@ -333,7 +333,7 @@ export default function Ricette() {
                 </div>
 
                 {/* Info rapide */}
-                <div className="flex flex-wrap gap-3 text-sm text-gray-600 mb-4">
+                <div className="flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-400 mb-4">
                   <span>&#9201; {ricetta.tempo_preparazione}</span>
                   <span>&#127860; {ricetta.porzioni} porz.</span>
                   <span>{ricetta.calorie} kcal</span>
@@ -341,35 +341,35 @@ export default function Ricette() {
 
                 {/* Macros */}
                 <div className="grid grid-cols-4 gap-2 mb-4">
-                  <div className="bg-blue-50 rounded p-2 text-center">
-                    <div className="text-xs text-blue-600 font-medium">
+                  <div className="bg-blue-50 dark:bg-blue-900/30 rounded p-2 text-center">
+                    <div className="text-xs text-blue-600 dark:text-blue-400 font-medium">
                       Proteine
                     </div>
-                    <div className="text-sm font-bold text-blue-800">
+                    <div className="text-sm font-bold text-blue-800 dark:text-blue-200">
                       {ricetta.proteine}g
                     </div>
                   </div>
-                  <div className="bg-amber-50 rounded p-2 text-center">
-                    <div className="text-xs text-amber-600 font-medium">
+                  <div className="bg-amber-50 dark:bg-amber-900/30 rounded p-2 text-center">
+                    <div className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                       Carbo
                     </div>
-                    <div className="text-sm font-bold text-amber-800">
+                    <div className="text-sm font-bold text-amber-800 dark:text-amber-200">
                       {ricetta.carboidrati}g
                     </div>
                   </div>
-                  <div className="bg-red-50 rounded p-2 text-center">
-                    <div className="text-xs text-red-600 font-medium">
+                  <div className="bg-red-50 dark:bg-red-900/30 rounded p-2 text-center">
+                    <div className="text-xs text-red-600 dark:text-red-400 font-medium">
                       Grassi
                     </div>
-                    <div className="text-sm font-bold text-red-800">
+                    <div className="text-sm font-bold text-red-800 dark:text-red-200">
                       {ricetta.grassi}g
                     </div>
                   </div>
-                  <div className="bg-green-50 rounded p-2 text-center">
-                    <div className="text-xs text-green-600 font-medium">
+                  <div className="bg-green-50 dark:bg-green-900/30 rounded p-2 text-center">
+                    <div className="text-xs text-green-600 dark:text-green-400 font-medium">
                       Fibre
                     </div>
-                    <div className="text-sm font-bold text-green-800">
+                    <div className="text-sm font-bold text-green-800 dark:text-green-200">
                       {ricetta.fibre}g
                     </div>
                   </div>
@@ -386,7 +386,7 @@ export default function Ricette() {
                       className={`px-2 py-0.5 rounded-full text-xs cursor-pointer ${
                         tagSelezionati.includes(tag)
                           ? "bg-emerald-600 text-white"
-                          : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                          : "bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800"
                       }`}
                     >
                       {tag}
@@ -401,7 +401,7 @@ export default function Ricette() {
                       ricettaAperta === ricetta.id ? null : ricetta.id
                     )
                   }
-                  className="text-emerald-600 hover:text-emerald-800 text-sm font-medium cursor-pointer"
+                  className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 text-sm font-medium cursor-pointer"
                 >
                   {ricettaAperta === ricetta.id
                     ? "Nascondi dettagli"
@@ -411,15 +411,15 @@ export default function Ricette() {
 
               {/* Dettagli espandibili */}
               {ricettaAperta === ricetta.id && (
-                <div className="border-t border-gray-200 p-6 bg-gray-50">
+                <div className="border-t border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-800">
                   {/* Ingredienti */}
-                  <h4 className="font-semibold text-gray-800 mb-2">
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">
                     Ingredienti
                   </h4>
                   <ul className="mb-4 space-y-1">
                     {ricetta.ingredienti.map((ing, i) => (
-                      <li key={i} className="text-sm text-gray-700 flex">
-                        <span className="text-emerald-600 mr-2">&#8226;</span>
+                      <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex">
+                        <span className="text-emerald-600 dark:text-emerald-400 mr-2">&#8226;</span>
                         <span>
                           <span className="font-medium">{ing.quantita}</span>{" "}
                           {ing.nome}
@@ -429,10 +429,10 @@ export default function Ricette() {
                   </ul>
 
                   {/* Preparazione */}
-                  <h4 className="font-semibold text-gray-800 mb-2">
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">
                     Preparazione
                   </h4>
-                  <p className="text-sm text-gray-700 leading-relaxed">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                     {ricetta.istruzioni}
                   </p>
                 </div>
@@ -443,11 +443,11 @@ export default function Ricette() {
 
         {/* No results */}
         {ricetteFiltrate.length === 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <p className="text-gray-500 text-lg mb-2">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 text-center transition-colors">
+            <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">
               Nessuna ricetta trovata
             </p>
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-400 dark:text-gray-500 text-sm">
               Prova a modificare i filtri o la ricerca
             </p>
             <button
@@ -460,14 +460,14 @@ export default function Ricette() {
         )}
 
         {/* Footer fonte */}
-        <div className="bg-emerald-700 text-white rounded-lg shadow-lg p-6 text-center">
-          <p className="text-emerald-200 text-sm mb-1">
+        <div className="bg-emerald-700 dark:bg-gray-800 text-white rounded-lg shadow-lg p-6 text-center transition-colors">
+          <p className="text-emerald-200 dark:text-gray-400 text-sm mb-1">
             Ricette da
           </p>
           <p className="text-lg font-semibold">
             &quot;The Plant-Based Athlete&quot;
           </p>
-          <p className="text-emerald-200 text-sm">
+          <p className="text-emerald-200 dark:text-gray-400 text-sm">
             Matt Frazier &amp; Robert Cheeke
           </p>
         </div>

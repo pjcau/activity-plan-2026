@@ -21,7 +21,7 @@ export default function Navbar() {
     : links;
 
   return (
-    <nav className="bg-emerald-800 border-b border-emerald-600">
+    <nav className="bg-emerald-800 dark:bg-gray-800 border-b border-emerald-600 dark:border-gray-700 transition-colors">
       <div className="max-w-5xl mx-auto px-4">
         <div className="flex space-x-6 overflow-x-auto scrollbar-hide">
           {allLinks.map((link) => (
@@ -31,7 +31,7 @@ export default function Navbar() {
               className={`py-3 px-2 text-sm font-medium transition-colors whitespace-nowrap ${
                 pathname === link.href
                   ? "text-white border-b-2 border-white"
-                  : "text-emerald-200 hover:text-white"
+                  : "text-emerald-200 dark:text-gray-400 hover:text-white"
               }`}
             >
               {link.label}

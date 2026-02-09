@@ -41,14 +41,14 @@ const libri = [
 
 export default function Libri() {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-8 transition-colors">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
             Libri Consigliati
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             I 3 libri che hanno ispirato questo progetto e la filosofia
             alimentare plant-based per runner e atleti di endurance.
           </p>
@@ -59,24 +59,24 @@ export default function Libri() {
           {libri.map((libro, i) => (
             <div
               key={i}
-              className="bg-white rounded-lg shadow-lg overflow-hidden"
+              className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden transition-colors"
             >
               <div className="p-6">
                 {/* Titolo e badge lingua */}
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-gray-800">
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                       {libro.titolo}
                     </h2>
-                    <p className="text-gray-500 italic">{libro.sottotitolo}</p>
+                    <p className="text-gray-500 dark:text-gray-400 italic">{libro.sottotitolo}</p>
                   </div>
-                  <span className="ml-3 px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 whitespace-nowrap">
+                  <span className="ml-3 px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
                     {libro.lingua}
                   </span>
                 </div>
 
                 {/* Autori e anno */}
-                <p className="text-emerald-700 font-medium mb-4">
+                <p className="text-emerald-700 dark:text-emerald-400 font-medium mb-4">
                   {libro.autori}{" "}
                   <span className="text-gray-400 font-normal">
                     ({libro.anno})
@@ -84,13 +84,13 @@ export default function Libri() {
                 </p>
 
                 {/* Descrizione */}
-                <p className="text-gray-600 mb-4 leading-relaxed">
+                <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
                   {libro.descrizione}
                 </p>
 
                 {/* Perché lo usiamo */}
-                <div className="bg-emerald-50 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-emerald-800">
+                <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-emerald-800 dark:text-emerald-300">
                     <span className="font-semibold">Usato nel sito:</span>{" "}
                     {libro.perche}
                   </p>
@@ -111,12 +111,12 @@ export default function Libri() {
         </div>
 
         {/* Footer */}
-        <div className="bg-emerald-700 text-white rounded-lg shadow-lg p-6 text-center">
+        <div className="bg-emerald-700 dark:bg-gray-800 text-white rounded-lg shadow-lg p-6 text-center transition-colors">
           <blockquote className="text-xl italic mb-4">
             &quot;The food you eat can be either the safest and most powerful
             form of medicine or the slowest form of poison.&quot;
           </blockquote>
-          <cite className="text-emerald-200">— Ann Wigmore</cite>
+          <cite className="text-emerald-200 dark:text-gray-400">— Ann Wigmore</cite>
         </div>
       </main>
     </div>
