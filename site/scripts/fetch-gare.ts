@@ -106,13 +106,13 @@ async function fetchWithDelay(url: string, delayMs = DETAIL_FETCH_DELAY_MS): Pro
   }
 }
 
-// --- Carica gare esistenti dal DB (tutti i campi) ---
-async function loadExistingGare(): Promise<Gara[]> {
+// --- Carica gare esistenti dal DB (tutti i campi + id) ---
+async function loadExistingGare(): Promise<(Gara & { id: number })[]> {
   const { data } = await supabase
     .from("gare")
-    .select("data, nome, distanza, tipo, localita, mese, fonti, competitiva, federazione, descrizione, link_sito, link_iscrizione, locandina_url, pdf_url, immagini")
+    .select("id, data, nome, distanza, tipo, localita, mese, fonti, competitiva, federazione, descrizione, link_sito, link_iscrizione, locandina_url, pdf_url, immagini")
     .in("mese", MESI_TARGET);
-  return (data as Gara[]) ?? [];
+  return (data as (Gara & { id: number })[]) ?? [];
 }
 
 // --- Scraper Calendario Podismo Toscana ---
@@ -626,15 +626,19 @@ async function main() {
 
   const merged = mergeGare([cpGare, usnGare]);
 
-  // Preserva dati dettaglio già presenti nel DB
-  const existingLookup = new Map<string, Gara>();
+  // --- Upsert incrementale: preserva gare non toccate dallo scraping ---
+  const existingLookup = new Map<string, Gara & { id: number }>();
   for (const g of existingGare) {
     existingLookup.set(`${g.data}-${normalizeForMerge(g.nome)}`, g);
   }
 
+  const idsToReplace: number[] = [];
   for (const gara of merged) {
-    const existing = existingLookup.get(`${gara.data}-${normalizeForMerge(gara.nome)}`);
+    const key = `${gara.data}-${normalizeForMerge(gara.nome)}`;
+    const existing = existingLookup.get(key);
     if (existing) {
+      idsToReplace.push(existing.id);
+      // Preserva dati dettaglio manuali dal DB
       if (!gara.descrizione && existing.descrizione) gara.descrizione = existing.descrizione;
       if (!gara.link_sito && existing.link_sito) gara.link_sito = existing.link_sito;
       if (!gara.link_iscrizione && existing.link_iscrizione) gara.link_iscrizione = existing.link_iscrizione;
@@ -666,18 +670,20 @@ async function main() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const rowsToInsert = merged.map(({ _detailUrl, ...rest }) => rest);
 
-  // Elimina solo i mesi per cui abbiamo trovato dati nuovi (preserva mesi senza dati)
-  const mesiConDati = [...new Set(merged.map((g) => g.mese))];
-  console.log(`\nMesi con dati nuovi: ${mesiConDati.sort().join(", ")} (su target: ${MESI_TARGET.join(", ")})`);
+  // Cancella SOLO le gare che stiamo per re-inserire con dati aggiornati
+  // Le gare non toccate dallo scraping restano intatte nel DB
+  console.log(`\nGare da aggiornare: ${idsToReplace.length}, nuove: ${rowsToInsert.length - idsToReplace.length}`);
 
-  const { error: delError } = await supabase
-    .from("gare")
-    .delete()
-    .in("mese", mesiConDati);
-
-  if (delError) {
-    console.error("Errore pulizia gare:", delError.message);
-    process.exit(1);
+  if (idsToReplace.length > 0) {
+    const BATCH = 100;
+    for (let i = 0; i < idsToReplace.length; i += BATCH) {
+      const batch = idsToReplace.slice(i, i + BATCH);
+      const { error: delError } = await supabase.from("gare").delete().in("id", batch);
+      if (delError) {
+        console.error("Errore cancellazione gare:", delError.message);
+        process.exit(1);
+      }
+    }
   }
 
   if (rowsToInsert.length > 0) {
