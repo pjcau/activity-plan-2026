@@ -110,6 +110,94 @@ export default function Libri() {
           ))}
         </div>
 
+        {/* Food Power Tips */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Food Power Tips
+          </h2>
+          <p className="text-gray-500 text-sm mb-6">
+            Consigli dal libro <span className="italic">The Plant-Based Athlete</span> per
+            assumere tutti i nutrienti essenziali da fonti vegetali.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              {
+                nutriente: "Omega-3 (ALA/DHA)",
+                fonti: "Semi di chia, semi di lino macinati, noci, alga spirulina",
+                tip: "2 cucchiai di semi di chia al giorno coprono il fabbisogno di ALA. Per il DHA, considera un integratore da alghe.",
+                colore: "bg-blue-50 text-blue-800 border-blue-200",
+                badge: "bg-blue-100 text-blue-700",
+              },
+              {
+                nutriente: "Vitamina B12",
+                fonti: "Integratore o alimenti fortificati (latte vegetale, lievito alimentare)",
+                tip: "L'unico nutriente che richiede sempre un integratore in una dieta 100% vegetale. 250 mcg/giorno.",
+                colore: "bg-red-50 text-red-800 border-red-200",
+                badge: "bg-red-100 text-red-700",
+              },
+              {
+                nutriente: "Ferro",
+                fonti: "Lenticchie, spinaci, semi di zucca, quinoa, cacao amaro",
+                tip: "Abbina sempre con vitamina C (limone, peperoni) per aumentare l'assorbimento fino a 6 volte.",
+                colore: "bg-orange-50 text-orange-800 border-orange-200",
+                badge: "bg-orange-100 text-orange-700",
+              },
+              {
+                nutriente: "Calcio",
+                fonti: "Cavolo riccio, broccoli, mandorle, tofu (con solfato di calcio), fichi secchi",
+                tip: "Il calcio vegetale ha un tasso di assorbimento spesso superiore a quello del latte vaccino.",
+                colore: "bg-gray-50 text-gray-800 border-gray-200",
+                badge: "bg-gray-200 text-gray-700",
+              },
+              {
+                nutriente: "Proteine complete",
+                fonti: "Tofu, tempeh, edamame, quinoa, grano saraceno, mix legumi + cereali",
+                tip: "Non serve combinarli nello stesso pasto: basta variare nell'arco della giornata.",
+                colore: "bg-emerald-50 text-emerald-800 border-emerald-200",
+                badge: "bg-emerald-100 text-emerald-700",
+              },
+              {
+                nutriente: "Vitamina D",
+                fonti: "Esposizione solare (15-20 min/giorno), funghi esposti al sole, integratore D3 vegana",
+                tip: "In inverno un integratore di 1000-2000 UI/giorno è raccomandato per chi vive sopra il 40° parallelo.",
+                colore: "bg-yellow-50 text-yellow-800 border-yellow-200",
+                badge: "bg-yellow-100 text-yellow-700",
+              },
+              {
+                nutriente: "Zinco",
+                fonti: "Semi di zucca, ceci, lenticchie, anacardi, avena",
+                tip: "L'ammollo dei legumi e la germinazione aumentano la biodisponibilità dello zinco.",
+                colore: "bg-purple-50 text-purple-800 border-purple-200",
+                badge: "bg-purple-100 text-purple-700",
+              },
+              {
+                nutriente: "Iodio",
+                fonti: "Alghe (nori, kelp), sale iodato, patate",
+                tip: "Bastano 2 fogli di alga nori alla settimana. Attenzione alla kelp: dosi eccessive possono essere controproducenti.",
+                colore: "bg-teal-50 text-teal-800 border-teal-200",
+                badge: "bg-teal-100 text-teal-700",
+              },
+            ].map((item) => (
+              <div
+                key={item.nutriente}
+                className={`rounded-lg border p-4 ${item.colore}`}
+              >
+                <span
+                  className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold mb-2 ${item.badge}`}
+                >
+                  {item.nutriente}
+                </span>
+                <p className="text-sm font-medium mb-1">
+                  {item.fonti}
+                </p>
+                <p className="text-xs opacity-80">
+                  {item.tip}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Footer */}
         <div className="bg-emerald-700 dark:bg-gray-800 text-white rounded-lg shadow-lg p-6 text-center transition-colors">
           <blockquote className="text-xl italic mb-4">
