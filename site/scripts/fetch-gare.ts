@@ -128,7 +128,7 @@ async function fetchCalendarioPodismo(): Promise<Gara[]> {
     const ultimoGiorno = new Date(anno, mese, 0).getDate();
     const dataInizio = `${anno}-${meseStr}-01`;
     const dataFine = `${anno}-${meseStr}-${ultimoGiorno}`;
-    const url = `https://www.calendariopodismo.it/?da=${dataInizio}&a=${dataFine}`;
+    const url = `https://www.calendariopodismo.it/?da=${dataInizio}&a=${dataFine}&localita=toscana`;
     
     console.log(`[CalendarioPodismo] Fetching ${url}...`);
 
