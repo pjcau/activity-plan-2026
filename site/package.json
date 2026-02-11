@@ -10,6 +10,7 @@
     "fetch-gare": "tsx scripts/fetch-gare.ts",
     "seed-ricette": "tsx scripts/seed-ricette.ts",
     "cleanup-gare": "tsx scripts/cleanup-gare.ts",
+    "seed-content": "tsx scripts/seed-content.ts",
     "prepare": "husky"
   },
   "dependencies": {

@@ -1,43 +1,56 @@
-export default function Alimentazione() {
-  const capisaldi = [
-    {
-      titolo: "Carboidrati complessi come base",
-      descrizione: "Cereali integrali, legumi, patate e frutta forniscono energia sostenuta per gli allenamenti lunghi. I carboidrati sono il carburante primario per la corsa.",
-      esempi: ["Avena", "Riso integrale", "Quinoa", "Patate dolci", "Legumi"],
-    },
-    {
-      titolo: "Proteine vegetali complete",
-      descrizione: "Combinando diverse fonti proteiche vegetali si ottengono tutti gli aminoacidi essenziali necessari per il recupero muscolare.",
-      esempi: ["Legumi + cereali", "Tofu", "Tempeh", "Seitan", "Edamame"],
-    },
-    {
-      titolo: "Grassi sani per l'endurance",
-      descrizione: "I grassi insaturi supportano la salute cardiovascolare e forniscono energia per gli sforzi prolungati.",
-      esempi: ["Avocado", "Noci", "Semi di chia", "Semi di lino", "Olio EVO"],
-    },
-    {
-      titolo: "Antiossidanti e recupero",
-      descrizione: "Frutta e verdura colorate riducono l'infiammazione e accelerano il recupero post-allenamento.",
-      esempi: ["Frutti di bosco", "Verdure a foglia verde", "Barbabietole", "Ciliegie", "Curcuma"],
-    },
-    {
-      titolo: "Idratazione e elettroliti",
-      descrizione: "Acqua, frutta e verdura ad alto contenuto idrico mantengono l'equilibrio elettrolitico durante gli sforzi.",
-      esempi: ["Acqua di cocco", "Anguria", "Cetrioli", "Sedano", "Banane"],
-    },
-    {
-      titolo: "Timing nutrizionale",
-      descrizione: "Pianificare i pasti in base agli allenamenti: carboidrati prima, proteine dopo, pasti leggeri pre-gara.",
-      esempi: ["3h prima: pasto completo", "1h prima: snack leggero", "Post: proteine + carbo", "Sera: recupero"],
-    },
-  ];
+"use client";
 
-  const integrazione = [
-    { nome: "Vitamina B12", note: "Essenziale, non prodotta da fonti vegetali" },
-    { nome: "Vitamina D", note: "Soprattutto in inverno, supporta ossa e immunità" },
-    { nome: "Omega-3 (EPA/DHA)", note: "Da alghe, per infiammazione e recupero" },
-    { nome: "Ferro", note: "Monitorare i livelli, abbinare a vitamina C" },
-  ];
+import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/AuthContext";
+
+type Caposaldo = {
+  id: number;
+  titolo: string;
+  descrizione: string;
+  esempi: string[];
+  ordine: number;
+};
+
+type Integrazione = {
+  id: number;
+  nome: string;
+  note: string;
+  ordine: number;
+};
+
+export default function Alimentazione() {
+  const { supabase } = useAuth();
+  const [capisaldi, setCapisaldi] = useState<Caposaldo[]>([]);
+  const [integrazione, setIntegrazione] = useState<Integrazione[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!supabase) return;
+    const load = async () => {
+      const [capRes, intRes] = await Promise.all([
+        supabase.from("capisaldi").select("*").order("ordine"),
+        supabase.from("integrazioni").select("*").order("ordine"),
+      ]);
+      if (capRes.data) setCapisaldi(capRes.data as Caposaldo[]);
+      if (intRes.data) setIntegrazione(intRes.data as Integrazione[]);
+      setLoading(false);
+    };
+    load();
+  }, [supabase]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
+        <main className="max-w-5xl mx-auto px-4 py-8">
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
@@ -56,7 +69,7 @@ export default function Alimentazione() {
         <h2 className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mb-6">I 6 Capisaldi</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {capisaldi.map((item, i) => (
-            <div key={i} className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 transition-colors">
+            <div key={item.id} className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 transition-colors">
               <div className="flex items-center mb-3">
                 <span className="bg-emerald-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold mr-3">
                   {i + 1}
@@ -79,9 +92,9 @@ export default function Alimentazione() {
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-8 transition-colors">
           <h2 className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mb-4">Integrazione Consigliata</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {integrazione.map((item, i) => (
-              <div key={i} className="flex items-start p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <span className="text-emerald-600 mr-3">💊</span>
+            {integrazione.map((item) => (
+              <div key={item.id} className="flex items-start p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <span className="text-emerald-600 mr-3">&#x1F48A;</span>
                 <div>
                   <span className="font-semibold text-gray-800 dark:text-gray-100">{item.nome}</span>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{item.note}</p>
@@ -96,7 +109,7 @@ export default function Alimentazione() {
           <blockquote className="text-xl italic mb-4">
             &quot;Eat clean, train dirty, and run free.&quot;
           </blockquote>
-          <cite className="text-emerald-200 dark:text-gray-400">— Scott Jurek, Eat and Run</cite>
+          <cite className="text-emerald-200 dark:text-gray-400">&mdash; Scott Jurek, Eat and Run</cite>
         </div>
       </main>
     </div>
