@@ -19,6 +19,7 @@ type Gara = {
   locandina_url: string | null;
   pdf_url: string | null;
   immagini: string[] | null;
+  distanza_fi: number | null;
   _detailUrl?: string;
 };
 
@@ -52,6 +53,83 @@ const MESI_SHORT: Record<number, string> = {
 };
 
 const TRAIL_KEYWORDS = ["trail", "ultra", "skyrace", "ecomaratona", "ecotrail", "crossing"];
+
+// --- Geocoding con Nominatim (OpenStreetMap) ---
+const FIRENZE = { lat: 43.7696, lon: 11.2558 };
+const geocodeCache = new Map<string, number | null>();
+
+function haversineKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLon = ((b.lon - a.lon) * Math.PI) / 180;
+  const sinLat = Math.sin(dLat / 2);
+  const sinLon = Math.sin(dLon / 2);
+  const h = sinLat * sinLat + Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * sinLon * sinLon;
+  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+/** Estrae il nome del comune da stringhe tipo "Candeli - Bagno a Ripoli" */
+function extractComune(localita: string): string {
+  if (localita.includes(" - ")) {
+    const parts = localita.split(" - ");
+    return parts[parts.length - 1].trim();
+  }
+  return localita.replace(/\s*\([^)]*\)\s*/g, "").trim();
+}
+
+async function geocodeLocalita(localita: string): Promise<number | null> {
+  if (geocodeCache.has(localita)) return geocodeCache.get(localita)!;
+
+  const queries = [localita, extractComune(localita)];
+  for (const q of queries) {
+    try {
+      await new Promise((r) => setTimeout(r, 1100)); // Nominatim: max 1 req/sec
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)},+Italia&format=json&limit=1`;
+      const res = await fetch(url, {
+        headers: { "User-Agent": "ActivityPlan2026/1.0 (running@scraper)" },
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.length > 0) {
+        const coord = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+        const km = Math.round(haversineKm(FIRENZE, coord));
+        geocodeCache.set(localita, km);
+        return km;
+      }
+    } catch {
+      // ignore, try next query
+    }
+  }
+
+  geocodeCache.set(localita, null);
+  return null;
+}
+
+async function geocodeAllGare(gare: Gara[], existingGare: (Gara & { id: number })[]): Promise<void> {
+  // Pre-popola cache con dati esistenti dal DB
+  for (const g of existingGare) {
+    if (g.distanza_fi !== null) {
+      geocodeCache.set(g.localita, g.distanza_fi);
+    }
+  }
+
+  const uniqueLocalita = [...new Set(gare.map((g) => g.localita))];
+  const toGeocode = uniqueLocalita.filter((l) => !geocodeCache.has(l));
+
+  if (toGeocode.length > 0) {
+    console.log(`\n[Geocoding] ${toGeocode.length} località nuove da geocodificare...`);
+    for (let i = 0; i < toGeocode.length; i++) {
+      const loc = toGeocode[i];
+      const km = await geocodeLocalita(loc);
+      console.log(`  [${i + 1}/${toGeocode.length}] ${loc} -> ${km !== null ? km + " km" : "non trovata"}`);
+    }
+  }
+
+  // Assegna distanza_fi a tutte le gare
+  for (const gara of gare) {
+    gara.distanza_fi = geocodeCache.get(gara.localita) ?? null;
+  }
+}
 
 function detectTipo(nome: string): "Trail" | "Strada" {
   const lower = nome.toLowerCase();
@@ -110,7 +188,7 @@ async function fetchWithDelay(url: string, delayMs = DETAIL_FETCH_DELAY_MS): Pro
 async function loadExistingGare(): Promise<(Gara & { id: number })[]> {
   const { data } = await supabase
     .from("gare")
-    .select("id, data, nome, distanza, tipo, localita, mese, fonti, competitiva, federazione, descrizione, link_sito, link_iscrizione, locandina_url, pdf_url, immagini")
+    .select("id, data, nome, distanza, tipo, localita, mese, fonti, competitiva, federazione, descrizione, link_sito, link_iscrizione, locandina_url, pdf_url, immagini, distanza_fi")
     .in("mese", MESI_TARGET);
   return (data as (Gara & { id: number })[]) ?? [];
 }
@@ -225,6 +303,7 @@ async function fetchCalendarioPodismo(): Promise<Gara[]> {
         locandina_url: null,
         pdf_url: null,
         immagini: null,
+        distanza_fi: null,
         _detailUrl: detailUrl || undefined,
       });
     } catch {
@@ -457,6 +536,7 @@ async function fetchUSNave(): Promise<Gara[]> {
         locandina_url: null,
         pdf_url: null,
         immagini: listingImgs.length > 0 ? listingImgs : null,
+        distanza_fi: null,
         _detailUrl: detailUrl || undefined,
       });
     } catch {
@@ -642,6 +722,9 @@ async function main() {
 
   const merged = mergeGare([cpGare, usnGare]);
 
+  // Geocodifica località e calcola distanza da Firenze
+  await geocodeAllGare(merged, existingGare);
+
   // --- Upsert incrementale: preserva gare non toccate dallo scraping ---
   const existingLookup = new Map<string, Gara & { id: number }>();
   for (const g of existingGare) {
@@ -672,6 +755,7 @@ async function main() {
       }
       if (!gara.federazione && existing.federazione) gara.federazione = existing.federazione;
       if (existing.competitiva && !gara.competitiva) gara.competitiva = existing.competitiva;
+      if (gara.distanza_fi === null && existing.distanza_fi !== null) gara.distanza_fi = existing.distanza_fi;
     }
   }
 

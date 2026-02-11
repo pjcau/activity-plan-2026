@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
-import { getDistanzaDaFirenze } from "@/lib/coordinate";
 
 type Fonte = "Calendario Podismo" | "US Nave";
 
@@ -18,6 +17,7 @@ type Gara = {
   fonti: Fonte[];
   competitiva: boolean;
   federazione: string;
+  distanza_fi: number | null;
 };
 
 const mesiNomi: Record<number, string> = {
@@ -204,8 +204,8 @@ function GareTable({
                         </td>
                         <td className="p-3 border-b dark:border-gray-700 dark:text-gray-300">{gara.localita}</td>
                         <td className="p-3 border-b dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
-                          {getDistanzaDaFirenze(gara.localita) !== null
-                            ? `${getDistanzaDaFirenze(gara.localita)} km`
+                          {gara.distanza_fi !== null
+                            ? `${gara.distanza_fi} km`
                             : "\u2014"}
                         </td>
                         <td className="p-3 border-b dark:border-gray-700">
@@ -266,7 +266,7 @@ export default function Home() {
     if (!supabase) return;
     const loadGare = async () => {
       const [gareRes, metaRes] = await Promise.all([
-        supabase.from("gare").select("id, data, nome, distanza, tipo, localita, mese, fonti, competitiva, federazione").order("mese").order("data"),
+        supabase.from("gare").select("id, data, nome, distanza, tipo, localita, mese, fonti, competitiva, federazione, distanza_fi").order("mese").order("data"),
         supabase.from("metadata").select("value").eq("key", "ultimoAggiornamento").single(),
       ]);
       if (gareRes.data) setGare(gareRes.data as Gara[]);
@@ -407,8 +407,7 @@ export default function Home() {
     const matchMese = meseSelezionato === 0 || gara.mese === meseSelezionato;
     const matchDistanza = gara.distanza >= distanzaMin && gara.distanza <= distanzaMax;
     const matchFonte = gara.fonti.some((f) => fontiAttive.has(f));
-    const distFi = getDistanzaDaFirenze(gara.localita);
-    const matchDistFirenze = distFi === null || distFi <= maxDistDaFirenze;
+    const matchDistFirenze = gara.distanza_fi === null || gara.distanza_fi <= maxDistDaFirenze;
     const matchCompetitiva =
       filtroCompetitiva === "tutte" ||
       (filtroCompetitiva === "si" && gara.competitiva) ||

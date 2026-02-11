@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
-import { getCoordinate, getDistanzaDaFirenze } from "@/lib/coordinate";
 
 type GaraDettaglio = {
   id: number;
@@ -23,6 +22,7 @@ type GaraDettaglio = {
   immagini: string[];
   competitiva: boolean;
   federazione: string;
+  distanza_fi: number | null;
 };
 
 export default function GaraDetail() {
@@ -72,8 +72,8 @@ export default function GaraDetail() {
     );
   }
 
-  const coord = getCoordinate(gara.localita);
-  const distFi = getDistanzaDaFirenze(gara.localita);
+  const distFi = gara.distanza_fi;
+  const mapQuery = encodeURIComponent(gara.localita + ", Italia");
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
@@ -224,33 +224,31 @@ export default function GaraDetail() {
         })()}
 
         {/* Mappa */}
-        {coord && (
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-6 transition-colors">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">
-              Posizione: {gara.localita}
-            </h2>
-            <div className="rounded-lg overflow-hidden">
-              <iframe
-                src={`https://maps.google.com/maps?q=${coord.lat},${coord.lon}&z=13&output=embed`}
-                width="100%"
-                height="400"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title={`Mappa ${gara.localita}`}
-              />
-            </div>
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${coord.lat},${coord.lon}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block mt-3 text-sm text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium"
-            >
-              Apri in Google Maps &#8599;
-            </a>
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-6 transition-colors">
+          <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">
+            Posizione: {gara.localita}
+          </h2>
+          <div className="rounded-lg overflow-hidden">
+            <iframe
+              src={`https://maps.google.com/maps?q=${mapQuery}&z=13&output=embed`}
+              width="100%"
+              height="400"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title={`Mappa ${gara.localita}`}
+            />
           </div>
-        )}
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-3 text-sm text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium"
+          >
+            Apri in Google Maps &#8599;
+          </a>
+        </div>
       </main>
     </div>
   );
