@@ -118,8 +118,10 @@ async function loadExistingGare(): Promise<(Gara & { id: number })[]> {
 // --- Scraper Calendario Podismo Toscana ---
 function getCalendarioPodismoUrls(): string[] {
   const now = new Date();
-  const anno = now.getFullYear();
+  const meseCorrente = now.getMonth() + 1;
+  const annoCorrente = now.getFullYear();
   return MESI_TARGET.map((mese) => {
+    const anno = mese < meseCorrente ? annoCorrente + 1 : annoCorrente;
     const mm = String(mese).padStart(2, "0");
     return `https://www.calendariopodismo.it/regione/toscana/${anno}-${mm}`;
   });
