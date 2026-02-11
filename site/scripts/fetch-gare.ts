@@ -117,17 +117,29 @@ async function loadExistingGare(): Promise<(Gara & { id: number })[]> {
 
 // --- Scraper Calendario Podismo Toscana ---
 async function fetchCalendarioPodismo(): Promise<Gara[]> {
-  const url = "https://www.calendariopodismo.it/regione/toscana";
-  console.log(`[CalendarioPodismo] Fetching ${url}...`);
-
-  const res = await fetch(url, {
-    headers: { "User-Agent": "ActivityPlan2026/1.0" },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-  const html = await res.text();
-  const $ = cheerio.load(html);
   const gare: Gara[] = [];
+  const now = new Date();
+  const anno = now.getFullYear();
+
+  // Fetch per ogni mese target usando parametri di data
+  for (const mese of MESI_TARGET) {
+    const meseStr = String(mese).padStart(2, "0");
+    const meseDate = new Date(anno, mese - 1, 1);
+    const ultimoGiorno = new Date(anno, mese, 0).getDate();
+    const dataInizio = `${anno}-${meseStr}-01`;
+    const dataFine = `${anno}-${meseStr}-${ultimoGiorno}`;
+    const url = `https://www.calendariopodismo.it/?da=${dataInizio}&a=${dataFine}`;
+    
+    console.log(`[CalendarioPodismo] Fetching ${url}...`);
+
+    try {
+      const res = await fetch(url, {
+        headers: { "User-Agent": "ActivityPlan2026/1.0" },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const html = await res.text();
+      const $ = cheerio.load(html);
 
   $(".gara").each((_, el) => {
     try {
@@ -218,7 +230,11 @@ async function fetchCalendarioPodismo(): Promise<Gara[]> {
     } catch {
       // Ignora gare con dati malformati
     }
-  });
+    });
+    } catch (err) {
+      console.warn(`[CalendarioPodismo] Errore fetch ${url}: ${err}`);
+    }
+  }
 
   console.log(`[CalendarioPodismo] Trovate ${gare.length} gare`);
   return gare;
