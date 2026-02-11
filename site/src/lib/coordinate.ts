@@ -70,13 +70,25 @@ export function haversineKm(a: { lat: number; lon: number }, b: { lat: number; l
   return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
+function normalizeLocalita(s: string): string {
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/\s*\([^)]*\)\s*/g, "")   // "(FI)", "(GR)" ecc.
+    .replace(/\s+/g, " ");
+}
+
 const distanzaDaFirenze: Record<string, number> = {};
+const normalizedDistanza: Record<string, number> = {};
 for (const [nome, coord] of Object.entries(coordLocalita)) {
-  distanzaDaFirenze[nome] = Math.round(haversineKm(FIRENZE, coord));
+  const km = Math.round(haversineKm(FIRENZE, coord));
+  distanzaDaFirenze[nome] = km;
+  normalizedDistanza[normalizeLocalita(nome)] = km;
 }
 
 export function getDistanzaDaFirenze(localita: string): number | null {
-  return distanzaDaFirenze[localita] ?? null;
+  if (distanzaDaFirenze[localita] !== undefined) return distanzaDaFirenze[localita];
+  return normalizedDistanza[normalizeLocalita(localita)] ?? null;
 }
 
 export function getCoordinate(localita: string): { lat: number; lon: number } | null {
