@@ -116,18 +116,34 @@ async function loadExistingGare(): Promise<(Gara & { id: number })[]> {
 }
 
 // --- Scraper Calendario Podismo Toscana ---
-async function fetchCalendarioPodismo(): Promise<Gara[]> {
-  const url = "https://www.calendariopodismo.it/regione/toscana";
-  console.log(`[CalendarioPodismo] Fetching ${url}...`);
-
-  const res = await fetch(url, {
-    headers: { "User-Agent": "ActivityPlan2026/1.0" },
+function getCalendarioPodismoUrls(): string[] {
+  const now = new Date();
+  const meseCorrente = now.getMonth() + 1;
+  const annoCorrente = now.getFullYear();
+  return MESI_TARGET.map((mese) => {
+    const anno = mese < meseCorrente ? annoCorrente + 1 : annoCorrente;
+    const mm = String(mese).padStart(2, "0");
+    return `https://www.calendariopodismo.it/regione/toscana/${anno}-${mm}`;
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+}
 
-  const html = await res.text();
-  const $ = cheerio.load(html);
+async function fetchCalendarioPodismo(): Promise<Gara[]> {
+  const urls = getCalendarioPodismoUrls();
   const gare: Gara[] = [];
+
+  for (const url of urls) {
+    console.log(`[CalendarioPodismo] Fetching ${url}...`);
+
+    const res = await fetch(url, {
+      headers: { "User-Agent": "ActivityPlan2026/1.0" },
+    });
+    if (!res.ok) {
+      console.warn(`[CalendarioPodismo] HTTP ${res.status} per ${url}, skip`);
+      continue;
+    }
+
+    const html = await res.text();
+    const $ = cheerio.load(html);
 
   $(".gara").each((_, el) => {
     try {
@@ -219,6 +235,7 @@ async function fetchCalendarioPodismo(): Promise<Gara[]> {
       // Ignora gare con dati malformati
     }
   });
+  }
 
   console.log(`[CalendarioPodismo] Trovate ${gare.length} gare`);
   return gare;
