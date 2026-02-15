@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 type Message = {
   role: "user" | "assistant" | "system";
   text: string;
+  confidence?: number;
   sources?: { fonte: string; categoria: string; score: number }[];
   related?: { risposta: string; fonte: string; score: number }[];
 };
@@ -85,6 +86,7 @@ export default function AiCoach() {
             {
               role: "assistant",
               text: data.text,
+              confidence: data.confidence,
               sources: data.sources,
               related: data.related,
             },
@@ -304,11 +306,18 @@ export default function AiCoach() {
                   </div>
                 )}
 
-                {/* Disclaimer */}
+                {/* Confidence + Disclaimer */}
                 {msg.role === "assistant" && (
-                  <p className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800 text-[10px] italic text-gray-400 dark:text-gray-500 leading-snug">
-                    Le risposte sono generate da un sistema sperimentale basato su ricerca semantica. Non sostituiscono il parere di un professionista. Usale come spunto, non come indicazione definitiva.
-                  </p>
+                  <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+                    {msg.confidence != null && (
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-1">
+                        Confidenza: {msg.confidence}%
+                      </p>
+                    )}
+                    <p className="text-[10px] italic text-gray-400 dark:text-gray-500 leading-snug">
+                      Le risposte sono generate da un sistema sperimentale basato su ricerca semantica. Non sostituiscono il parere di un professionista. Usale come spunto, non come indicazione definitiva.
+                    </p>
+                  </div>
                 )}
               </div>
             </div>

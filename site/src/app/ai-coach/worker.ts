@@ -215,24 +215,46 @@ self.onmessage = async (e: MessageEvent) => {
       const queryEmbedding = await embed(data.text);
       const results = findTopK(queryEmbedding, 3);
 
-      const threshold = 0.35;
-      const relevant = results.filter((r) => r.score >= threshold);
+      const CONFIDENT_THRESHOLD = 0.55;
+      const MIN_THRESHOLD = 0.45;
+      const best = results[0];
 
-      if (relevant.length === 0) {
+      const DEFAULT_REPLY =
+        "Non riesco a trovare una risposta pertinente alla tua domanda. Posso aiutarti su questi argomenti:\n\n" +
+        "- Nutrizione plant-based per sportivi\n" +
+        "- Preparazione per running, maratona e ultra-trail\n" +
+        "- Integrazione (B12, ferro, omega-3, proteine)\n" +
+        "- Ricette e pasti pre/post gara\n" +
+        "- Consigli dai libri: The Plant-Based Athlete, Eat & Run, Finding Ultra, Andiamo a correre\n\n" +
+        "Prova a riformulare la domanda in modo più specifico!";
+
+      if (!best || best.score < MIN_THRESHOLD) {
+        self.postMessage({
+          type: "answer",
+          data: { text: DEFAULT_REPLY, confidence: best ? Math.round(best.score * 100) : 0, sources: [] },
+        });
+        return;
+      }
+
+      if (best.score < CONFIDENT_THRESHOLD) {
         self.postMessage({
           type: "answer",
           data: {
-            text: "Non ho trovato informazioni specifiche su questo argomento nella mia knowledge base. Prova a riformulare la domanda, oppure chiedi qualcosa su nutrizione plant-based, allenamento running/trail, o i libri di riferimento (The Plant-Based Athlete, Eat & Run, Finding Ultra, Andiamo a correre).",
+            text: DEFAULT_REPLY,
+            confidence: Math.round(best.score * 100),
             sources: [],
           },
         });
         return;
       }
 
+      // Confident match
+      const relevant = results.filter((r) => r.score >= MIN_THRESHOLD);
       self.postMessage({
         type: "answer",
         data: {
           text: relevant[0].entry.risposta,
+          confidence: Math.round(best.score * 100),
           sources: relevant.map((r) => ({
             fonte: r.entry.fonte,
             categoria: r.entry.categoria,
