@@ -55,6 +55,20 @@ const libri = [
     lingua: "Italiano",
     ordine: 3,
   },
+  {
+    titolo: "Andiamo a correre",
+    sottotitolo: "La guida completa per chi vuole iniziare o migliorare nella corsa",
+    autori: "Fulvio Massini",
+    anno: 2016,
+    descrizione:
+      "La 'bibbia della corsa' italiana. Fulvio Massini, da trent'anni allenatore di maratoneti, svela tecnica, allenamento personalizzato (dal principiante al maratoneta), alimentazione, integratori, prevenzione infortuni e mental training. 336 pagine con esercizi illustrati, capitoli dedicati a donne, giovani e runner over 50. Prefazione di Linus.",
+    perche:
+      "Riferimento per la sezione Allenamenti e per i consigli tecnici dell'AI Coach.",
+    link_amazon:
+      "https://www.amazon.it/Andiamo-correre-illustrata-Fulvio-Massini/dp/8817087165",
+    lingua: "Italiano",
+    ordine: 4,
+  },
 ];
 
 const foodPowerTips = [

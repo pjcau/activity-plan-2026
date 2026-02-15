@@ -6,10 +6,11 @@ import { useAuth } from "@/lib/AuthContext";
 
 const links = [
   { href: "/", label: "Gare" },
-  { href: "/allenamenti", label: "Allenamenti" },
+  { href: "/ai-coach", label: "AI Coach" },
   { href: "/alimentazione", label: "Alimentazione" },
   { href: "/ricette", label: "Ricette" },
   { href: "/libri", label: "Libri" },
+  { href: "/allenamenti", label: "Allenamenti" },
 ];
 
 export default function Navbar() {
