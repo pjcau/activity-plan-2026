@@ -37,6 +37,7 @@ export default function AiCoach() {
   const [progress, setProgress] = useState(0);
   const [indexProgress, setIndexProgress] = useState({ done: 0, total: 0 });
   const workerRef = useRef<Worker | null>(null);
+  const initedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -48,9 +49,28 @@ export default function AiCoach() {
     scrollToBottom();
   }, [messages, status, scrollToBottom]);
 
-  // Initialize worker + load KB from Supabase
+  // Initialize worker once
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase || initedRef.current) return;
+    initedRef.current = true;
+
+    const loadKB = async (worker: Worker) => {
+      setStatus("loading");
+      setStatusText("Caricamento knowledge base...");
+
+      const { data: kb, error } = await supabase
+        .from("ai_knowledge_base")
+        .select("*")
+        .order("ordine");
+
+      if (error || !kb) {
+        setStatus("error");
+        setStatusText("Errore caricamento knowledge base");
+        return;
+      }
+
+      worker.postMessage({ type: "init", data: { knowledgeBase: kb } });
+    };
 
     const worker = new Worker(new URL("./worker.ts", import.meta.url), {
       type: "module",
@@ -101,35 +121,16 @@ export default function AiCoach() {
           ]);
           break;
         case "reset-done":
-          // Re-init after reset
-          init();
+          loadKB(worker);
           break;
       }
     };
 
-    // Load knowledge base from Supabase, then init worker
-    const init = async () => {
-      setStatus("loading");
-      setStatusText("Caricamento knowledge base...");
-
-      const { data: kb, error } = await supabase
-        .from("ai_knowledge_base")
-        .select("*")
-        .order("ordine");
-
-      if (error || !kb) {
-        setStatus("error");
-        setStatusText("Errore caricamento knowledge base");
-        return;
-      }
-
-      worker.postMessage({ type: "init", data: { knowledgeBase: kb } });
-    };
-
-    init();
+    loadKB(worker);
 
     return () => {
       worker.terminate();
+      initedRef.current = false;
     };
   }, [supabase]);
 
@@ -159,8 +160,8 @@ export default function AiCoach() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
-      <main className="max-w-3xl mx-auto px-4 py-8 flex flex-col" style={{ height: "calc(100vh - 140px)" }}>
+    <div className="h-[100dvh] bg-gray-100 dark:bg-gray-950 transition-colors flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      <main className="max-w-3xl mx-auto px-4 py-4 md:py-8 flex flex-col flex-1 min-h-0 w-full">
         {/* Header */}
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 mb-4 transition-colors">
           <div className="flex items-start justify-between">
@@ -338,8 +339,8 @@ export default function AiCoach() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        {/* Input - anchored to bottom */}
+        <form onSubmit={handleSubmit} className="flex gap-2 pt-2 pb-[env(safe-area-inset-bottom)] sticky bottom-0 bg-gray-100 dark:bg-gray-950">
           <input
             ref={inputRef}
             type="text"
