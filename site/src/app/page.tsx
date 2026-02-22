@@ -58,10 +58,11 @@ const FILTERS_KEY = "gare-filtri";
 const FILTER_DEFAULTS = {
   meseSelezionato: () => new Date().getMonth() + 1,
   distanzaMin: 20,
-  distanzaMax: 80,
+  distanzaMax: 200,
   maxDistDaFirenze: 150,
   fontiAttive: ["Calendario Podismo", "US Nave"] as Fonte[],
   filtroCompetitiva: "tutte" as const,
+  tipiAttivi: ["Strada", "Trail"] as ("Strada" | "Trail")[],
   nascondiPassate: true,
 };
 
@@ -73,6 +74,7 @@ type SavedFilters = {
   fontiAttive?: string[];
   filtroCompetitiva?: string;
   federazioniAttive?: string[];
+  tipiAttivi?: string[];
   nascondiPassate?: boolean;
 };
 
@@ -256,6 +258,9 @@ export default function Home() {
   const [federazioniAttive, setFederazioniAttive] = useState<Set<string>>(
     new Set(initialFilters?.federazioniAttive ?? [])
   );
+  const [tipiAttivi, setTipiAttivi] = useState<Set<"Strada" | "Trail">>(
+    new Set((initialFilters?.tipiAttivi ?? FILTER_DEFAULTS.tipiAttivi) as ("Strada" | "Trail")[])
+  );
   const [nascondiPassate, setNascondiPassate] = useState<boolean>(
     initialFilters?.nascondiPassate ?? FILTER_DEFAULTS.nascondiPassate
   );
@@ -297,10 +302,11 @@ export default function Home() {
         fontiAttive: [...fontiAttive],
         filtroCompetitiva,
         federazioniAttive: [...federazioniAttive],
+        tipiAttivi: [...tipiAttivi],
         nascondiPassate,
       }));
     } catch {}
-  }, [meseSelezionato, distanzaMin, distanzaMax, maxDistDaFirenze, fontiAttive, filtroCompetitiva, federazioniAttive, nascondiPassate]);
+  }, [meseSelezionato, distanzaMin, distanzaMax, maxDistDaFirenze, fontiAttive, filtroCompetitiva, federazioniAttive, tipiAttivi, nascondiPassate]);
 
   // Carica gare salvate dall'utente
   useEffect(() => {
@@ -371,6 +377,18 @@ export default function Home() {
     });
   };
 
+  const toggleTipo = (tipo: "Strada" | "Trail") => {
+    setTipiAttivi((prev) => {
+      const next = new Set(prev);
+      if (next.has(tipo)) {
+        if (next.size > 1) next.delete(tipo);
+      } else {
+        next.add(tipo);
+      }
+      return next;
+    });
+  };
+
   const hasNonDefaultFilters =
     meseSelezionato !== FILTER_DEFAULTS.meseSelezionato() ||
     distanzaMin !== FILTER_DEFAULTS.distanzaMin ||
@@ -379,6 +397,7 @@ export default function Home() {
     filtroCompetitiva !== FILTER_DEFAULTS.filtroCompetitiva ||
     fontiAttive.size !== FILTER_DEFAULTS.fontiAttive.length ||
     federazioniAttive.size > 0 ||
+    tipiAttivi.size !== FILTER_DEFAULTS.tipiAttivi.length ||
     nascondiPassate !== FILTER_DEFAULTS.nascondiPassate;
 
   const resetFiltri = () => {
@@ -389,6 +408,7 @@ export default function Home() {
     setFontiAttive(new Set(FILTER_DEFAULTS.fontiAttive));
     setFiltroCompetitiva(FILTER_DEFAULTS.filtroCompetitiva);
     setFederazioniAttive(new Set());
+    setTipiAttivi(new Set(FILTER_DEFAULTS.tipiAttivi));
     setNascondiPassate(FILTER_DEFAULTS.nascondiPassate);
     sessionStorage.removeItem(FILTERS_KEY);
   };
@@ -412,10 +432,11 @@ export default function Home() {
       filtroCompetitiva === "tutte" ||
       (filtroCompetitiva === "si" && gara.competitiva) ||
       (filtroCompetitiva === "no" && !gara.competitiva);
+    const matchTipo = tipiAttivi.has(gara.tipo);
     const matchFederazione =
       federazioniAttive.size === 0 ||
       federazioniAttive.has(gara.federazione);
-    return matchMese && matchDistanza && matchFonte && matchDistFirenze && matchCompetitiva && matchFederazione;
+    return matchMese && matchDistanza && matchFonte && matchDistFirenze && matchCompetitiva && matchTipo && matchFederazione;
   });
 
   const dataAggiornamento = mounted && ultimoAggiornamento
@@ -472,7 +493,7 @@ export default function Home() {
               <input
                 type="range"
                 min="0"
-                max="80"
+                max="200"
                 value={distanzaMin}
                 onChange={(e) => setDistanzaMin(Number(e.target.value))}
                 className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
@@ -487,7 +508,7 @@ export default function Home() {
               <input
                 type="range"
                 min="20"
-                max="100"
+                max="200"
                 value={distanzaMax}
                 onChange={(e) => setDistanzaMax(Number(e.target.value))}
                 className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
@@ -562,6 +583,33 @@ export default function Home() {
                     {opt.label}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Filtro Tipo */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Tipo
+              </label>
+              <div className="flex flex-col gap-2">
+                {(["Strada", "Trail"] as const).map((tipo) => {
+                  const active = tipiAttivi.has(tipo);
+                  return (
+                    <button
+                      key={tipo}
+                      onClick={() => toggleTipo(tipo)}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-all ${
+                        active
+                          ? tipo === "Trail"
+                            ? "bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700"
+                            : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-600"
+                      }`}
+                    >
+                      {tipo}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
