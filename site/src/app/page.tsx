@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 
-type Fonte = "Calendario Podismo" | "US Nave";
+type Fonte = "Calendario Podismo" | "US Nave" | "TrailRunning.it";
 
 type Gara = {
   id: number;
@@ -38,6 +38,7 @@ const mesiNomi: Record<number, string> = {
 const fonteBadge: Record<Fonte, { bg: string; text: string; short: string }> = {
   "Calendario Podismo": { bg: "bg-emerald-100 dark:bg-emerald-900", text: "text-emerald-700 dark:text-emerald-300", short: "CP" },
   "US Nave": { bg: "bg-purple-100 dark:bg-purple-900", text: "text-purple-700 dark:text-purple-300", short: "USN" },
+  "TrailRunning.it": { bg: "bg-orange-100 dark:bg-orange-900", text: "text-orange-700 dark:text-orange-300", short: "TR" },
 };
 
 const MESI_SHORT_TO_NUM: Record<string, number> = {
@@ -60,7 +61,7 @@ const FILTER_DEFAULTS = {
   distanzaMin: 20,
   distanzaMax: 200,
   maxDistDaFirenze: 150,
-  fontiAttive: ["Calendario Podismo", "US Nave"] as Fonte[],
+  fontiAttive: ["Calendario Podismo", "US Nave", "TrailRunning.it"] as Fonte[],
   filtroCompetitiva: "tutte" as const,
   tipiAttivi: ["Strada", "Trail"] as ("Strada" | "Trail")[],
   nascondiPassate: true,
@@ -666,6 +667,7 @@ export default function Home() {
             <div className="flex gap-3 text-xs text-gray-500 dark:text-gray-400">
               <span><span className="font-semibold text-emerald-700 dark:text-emerald-400">CP</span> = Calendario Podismo</span>
               <span><span className="font-semibold text-purple-700 dark:text-purple-400">USN</span> = US Nave</span>
+              <span><span className="font-semibold text-orange-700 dark:text-orange-400">TR</span> = TrailRunning.it</span>
             </div>
           </div>
           <p className="mt-2 text-xs text-gray-400" suppressHydrationWarning>

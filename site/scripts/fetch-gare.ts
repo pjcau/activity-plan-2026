@@ -1,7 +1,7 @@
 import * as cheerio from "cheerio";
 import { createClient } from "@supabase/supabase-js";
 
-type Fonte = "Calendario Podismo" | "US Nave";
+type Fonte = "Calendario Podismo" | "US Nave" | "TrailRunning.it";
 
 type Gara = {
   data: string;
@@ -50,6 +50,11 @@ const MESI_MAP: Record<string, number> = {
 const MESI_SHORT: Record<number, string> = {
   1: "gen", 2: "feb", 3: "mar", 4: "apr", 5: "mag", 6: "giu",
   7: "lug", 8: "ago", 9: "set", 10: "ott", 11: "nov", 12: "dic",
+};
+
+const MESI_IT_SHORT: Record<string, number> = {
+  gen: 1, feb: 2, mar: 3, apr: 4, mag: 5, giu: 6,
+  lug: 7, ago: 8, set: 9, ott: 10, nov: 11, dic: 12,
 };
 
 const TRAIL_KEYWORDS = ["trail", "ultra", "skyrace", "ecomaratona", "ecotrail", "crossing"];
@@ -600,6 +605,181 @@ async function fetchUSNaveDetails(gare: Gara[]): Promise<void> {
   }
 }
 
+// --- Scraper TrailRunning.it ---
+async function fetchTrailRunningIt(): Promise<Gara[]> {
+  const url = "https://trailrunning.it/gare/gare-trail-toscana-2026/";
+  console.log(`[TrailRunning.it] Fetching ${url}...`);
+
+  const res = await fetch(url, {
+    headers: { "User-Agent": "ActivityPlan2026/1.0" },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  const html = await res.text();
+  const $ = cheerio.load(html);
+  const gare: Gara[] = [];
+
+  $(".ect-list-posts").each((_, el) => {
+    try {
+      const moText = $(el).find("span.ev-mo").text().trim().toLowerCase();
+      const dayText = $(el).find("span.ev-day").text().trim();
+      const mese = MESI_IT_SHORT[moText];
+      if (!mese || !MESI_TARGET.includes(mese)) return;
+
+      const giorno = parseInt(dayText);
+      if (isNaN(giorno)) return;
+
+      const linkEl = $(el).find("a.ect-event-url");
+      const nome = linkEl.text().trim();
+      const detailUrl = linkEl.attr("href") || "";
+      if (!nome) return;
+
+      // Try to extract distance from name (e.g. "ALPE DELLA LUNA TRAIL 27K")
+      let distanza = 0;
+      const distMatch = nome.match(/(\d+(?:[.,]\d+)?)\s*k/i);
+      if (distMatch) {
+        distanza = Math.round(parseFloat(distMatch[1].replace(",", ".")));
+      }
+
+      gare.push({
+        data: formatData(giorno, mese),
+        nome,
+        distanza,
+        tipo: "Trail",
+        localita: "",
+        mese,
+        fonti: ["TrailRunning.it"],
+        competitiva: true,
+        federazione: "",
+        descrizione: null,
+        link_sito: null,
+        link_iscrizione: null,
+        locandina_url: null,
+        pdf_url: null,
+        immagini: null,
+        distanza_fi: null,
+        _detailUrl: detailUrl || undefined,
+      });
+    } catch {
+      // Ignore malformed entries
+    }
+  });
+
+  console.log(`[TrailRunning.it] Trovate ${gare.length} gare (nei mesi target)`);
+  return gare;
+}
+
+// --- Detail pages TrailRunning.it ---
+async function fetchTrailRunningItDetails(gare: Gara[]): Promise<void> {
+  const toFetch = gare.filter((g) => g._detailUrl);
+  console.log(`[TrailRunning.it] Fetching ${toFetch.length} pagine dettaglio...`);
+
+  for (let i = 0; i < toFetch.length; i++) {
+    const gara = toFetch[i];
+    console.log(`  [${i + 1}/${toFetch.length}] ${gara.nome}`);
+
+    const html = await fetchWithDelay(gara._detailUrl!);
+    if (!html) continue;
+
+    try {
+      const $ = cheerio.load(html);
+
+      // 1. Extract location and image from JSON-LD
+      $('script[type="application/ld+json"]').each((_, el) => {
+        try {
+          const json = JSON.parse($(el).text());
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const events: any[] = [];
+          if (json["@graph"]) {
+            for (const item of json["@graph"]) {
+              if (item["@type"] === "Event") events.push(item);
+            }
+          } else if (json["@type"] === "Event") {
+            events.push(json);
+          }
+
+          for (const ev of events) {
+            if (!gara.localita && ev.location) {
+              const addr = ev.location.address;
+              if (addr?.addressLocality) {
+                gara.localita = addr.addressLocality;
+              } else if (ev.location.name) {
+                gara.localita = ev.location.name;
+              }
+            }
+            if (!gara.immagini && ev.image) {
+              const imgUrl = typeof ev.image === "string" ? ev.image : ev.image?.url;
+              if (imgUrl && !isAdImage(imgUrl)) {
+                gara.immagini = [imgUrl];
+              }
+            }
+          }
+        } catch {
+          // Ignore JSON parse errors
+        }
+      });
+
+      // 2. Extract distance from meta description or page text
+      if (gara.distanza === 0) {
+        const metaDesc = $('meta[name="description"]').attr("content") || "";
+        const distMetaMatch = metaDesc.match(/(\d+(?:[.,]\d+)?)\s*km/i);
+        if (distMetaMatch) {
+          gara.distanza = Math.round(parseFloat(distMetaMatch[1].replace(",", ".")));
+        }
+      }
+      if (gara.distanza === 0) {
+        const bodyText = $(".entry-content, .tribe-events-single-event-description").text();
+        const distMatch = bodyText.match(/(\d+(?:[.,]\d+)?)\s*km/i);
+        if (distMatch) {
+          gara.distanza = Math.round(parseFloat(distMatch[1].replace(",", ".")));
+        }
+      }
+
+      // 3. Description from meta or first paragraphs
+      if (!gara.descrizione) {
+        const metaDesc = $('meta[name="description"]').attr("content") || "";
+        if (metaDesc.length > 30) {
+          gara.descrizione = metaDesc;
+        } else {
+          const paragraphs: string[] = [];
+          $(".entry-content p, .tribe-events-single-event-description p").each((_, pEl) => {
+            const text = $(pEl).text().trim();
+            if (text.length > 20 && !text.includes("cookie") && !text.includes("privacy")) {
+              paragraphs.push(text);
+            }
+          });
+          if (paragraphs.length > 0) {
+            gara.descrizione = paragraphs.slice(0, 3).join("\n\n");
+          }
+        }
+      }
+
+      // 4. Organizer website / registration link
+      if (!gara.link_sito) {
+        $("a[href]").each((_, aEl) => {
+          const href = $(aEl).attr("href") || "";
+          const text = $(aEl).text().toLowerCase();
+          if (
+            !href.startsWith("http") ||
+            href.includes("trailrunning.it") ||
+            href.includes("facebook") ||
+            href.includes("instagram") ||
+            href.includes("twitter")
+          ) return;
+
+          if (!gara.link_iscrizione && (text.includes("iscri") || text.includes("registr"))) {
+            gara.link_iscrizione = href;
+          } else if (!gara.link_sito && (text.includes("sito") || text.includes("website"))) {
+            gara.link_sito = href;
+          }
+        });
+      }
+    } catch (err) {
+      console.warn(`  Errore parsing dettaglio ${gara.nome}: ${err}`);
+    }
+  }
+}
+
 // --- Merge helper per campi dettaglio ---
 function mergeDetailFields(target: Gara, source: Gara): void {
   if (!target.descrizione && source.descrizione) target.descrizione = source.descrizione;
@@ -685,6 +865,7 @@ async function main() {
   const existingBySource: Record<Fonte, Gara[]> = {
     "Calendario Podismo": existingGare.filter((g) => g.fonti.includes("Calendario Podismo")),
     "US Nave": existingGare.filter((g) => g.fonti.includes("US Nave")),
+    "TrailRunning.it": existingGare.filter((g) => g.fonti.includes("TrailRunning.it")),
   };
 
   // Fetch listing pages
@@ -712,6 +893,18 @@ async function main() {
     usnGare = existingBySource["US Nave"];
   }
 
+  let trGare: Gara[] = [];
+  try {
+    trGare = await fetchTrailRunningIt();
+    if (trGare.length === 0) {
+      console.warn("[TrailRunning.it] Nessuna gara trovata, uso dati precedenti");
+      trGare = existingBySource["TrailRunning.it"];
+    }
+  } catch (err) {
+    console.error(`[TrailRunning.it] Errore: ${err}`);
+    trGare = existingBySource["TrailRunning.it"];
+  }
+
   // Fetch detail pages (rate-limited)
   if (cpGare.length > 0 && cpGare !== existingBySource["Calendario Podismo"]) {
     await fetchCalendarioPodismoDetails(cpGare);
@@ -719,8 +912,21 @@ async function main() {
   if (usnGare.length > 0 && usnGare !== existingBySource["US Nave"]) {
     await fetchUSNaveDetails(usnGare);
   }
+  if (trGare.length > 0 && trGare !== existingBySource["TrailRunning.it"]) {
+    await fetchTrailRunningItDetails(trGare);
+    // Remove races with no distance (couldn't extract from name or detail page)
+    const before = trGare.length;
+    trGare = trGare.filter((g) => g.distanza > 0);
+    if (trGare.length < before) {
+      console.log(`[TrailRunning.it] Scartate ${before - trGare.length} gare senza distanza`);
+    }
+    // Set default locality for races without one
+    for (const g of trGare) {
+      if (!g.localita) g.localita = "Toscana";
+    }
+  }
 
-  const merged = mergeGare([cpGare, usnGare]);
+  const merged = mergeGare([cpGare, usnGare, trGare]);
 
   // Geocodifica località e calcola distanza da Firenze
   await geocodeAllGare(merged, existingGare);

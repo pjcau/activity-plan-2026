@@ -67,6 +67,14 @@ export default function RootLayout({
                     US Nave ASD
                   </a>
                 </span>
+                <span>
+                  <a
+                    href="https://trailrunning.it/gare/gare-trail-toscana-2026/"
+                    className="text-orange-400 hover:underline"
+                  >
+                    TrailRunning.it
+                  </a>
+                </span>
               </p>
             </footer>
           </ThemeProvider>
