@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx next build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git rm:*)",
+      "Bash(npm run dev:*)",
+      "Bash(lsof:*)",
+      "Bash(kill:*)",
+      "Bash(git pull:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npx supabase:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ANON_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlicWt0anB4enJsZ3htZWdqYXpsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDQ2MjIwNSwiZXhwIjoyMDg2MDM4MjA1fQ.no4ID1crve6DmPMgj0LiySMf5S0LIg0FegehO8PQuXs\")",
+      "Bash(BASE=\"https://ybqktjpxzrlgxmegjazl.supabase.co/rest/v1\")",
+      "Bash(__NEW_LINE_d3de090e699b193e__ curl -s -X PATCH \"$BASE/gare?localita=eq.PIAZZA+SANTA+CROCE\" -H \"apikey: $ANON_KEY\" -H \"Authorization: Bearer $ANON_KEY\" -H \"Content-Type: application/json\" -H \"Prefer: return=minimal\" -d '{\"\"distanza_fi\"\": 0}')",
+      "Bash(__NEW_LINE_d3de090e699b193e__ curl -s -X PATCH \"$BASE/gare?localita=eq.Palazzo+Direzionale+Interporto+Bologna\" -H \"apikey: $ANON_KEY\" -H \"Authorization: Bearer $ANON_KEY\" -H \"Content-Type: application/json\" -H \"Prefer: return=minimal\" -d '{\"\"distanza_fi\"\": 81}')",
+      "Bash(__NEW_LINE_d3de090e699b193e__ curl -s -X PATCH \"$BASE/gare?localita=eq.Borgo+Costiera+Mazara+del+Vallo\" -H \"apikey: $ANON_KEY\" -H \"Authorization: Bearer $ANON_KEY\" -H \"Content-Type: application/json\" -H \"Prefer: return=minimal\" -d '{\"\"distanza_fi\"\": 689}')",
+      "Bash(__NEW_LINE_d3de090e699b193e__ echo \"Done\")",
+      "Bash(ls:*)",
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "Bash(npm install:*)",
+      "WebFetch(domain:per-corsa.it)",
+      "WebFetch(domain:www.rizzolilibri.it)",
+      "WebFetch(domain:www.garmin.com)",
+      "WebFetch(domain:www.firenzemarathon.it)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "WebFetch(domain:console.groq.com)"
+    ]
+  }
+}
