@@ -1,23 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useAuth } from "@/lib/AuthContext";
+import ReactMarkdown from "react-markdown";
 
 type Message = {
   role: "user" | "assistant" | "system";
   text: string;
-  confidence?: number;
-  sources?: { fonte: string; categoria: string; score: number }[];
-  related?: { risposta: string; fonte: string; score: number }[];
 };
-
-type WorkerStatus =
-  | "idle"
-  | "loading"
-  | "indexing"
-  | "ready"
-  | "thinking"
-  | "error";
 
 const SUGGESTIONS = [
   "Cosa mangiare prima di un ultra trail?",
@@ -29,17 +18,13 @@ const SUGGESTIONS = [
 ];
 
 export default function AiCoach() {
-  const { supabase } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [status, setStatus] = useState<WorkerStatus>("idle");
-  const [statusText, setStatusText] = useState("");
-  const [progress, setProgress] = useState(0);
-  const [indexProgress, setIndexProgress] = useState({ done: 0, total: 0 });
-  const workerRef = useRef<Worker | null>(null);
-  const initedRef = useRef(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -47,103 +32,99 @@ export default function AiCoach() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, status, scrollToBottom]);
-
-  // Initialize worker once
-  useEffect(() => {
-    if (!supabase || initedRef.current) return;
-    initedRef.current = true;
-
-    const loadKB = async (worker: Worker) => {
-      setStatus("loading");
-      setStatusText("Caricamento knowledge base...");
-
-      const { data: kb, error } = await supabase
-        .from("ai_knowledge_base")
-        .select("*")
-        .order("ordine");
-
-      if (error || !kb) {
-        setStatus("error");
-        setStatusText("Errore caricamento knowledge base");
-        return;
-      }
-
-      worker.postMessage({ type: "init", data: { knowledgeBase: kb } });
-    };
-
-    const worker = new Worker(new URL("./worker.ts", import.meta.url), {
-      type: "module",
-    });
-    workerRef.current = worker;
-
-    worker.onmessage = (e: MessageEvent) => {
-      const { type, data } = e.data;
-
-      switch (type) {
-        case "status":
-          setStatus("loading");
-          setStatusText(data);
-          break;
-        case "progress":
-          setProgress(data.percent);
-          break;
-        case "indexing":
-          setStatus("indexing");
-          setIndexProgress(data);
-          break;
-        case "ready":
-          setStatus("ready");
-          setStatusText("");
-          break;
-        case "thinking":
-          setStatus("thinking");
-          break;
-        case "answer":
-          setStatus("ready");
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              text: data.text,
-              confidence: data.confidence,
-              sources: data.sources,
-              related: data.related,
-            },
-          ]);
-          break;
-        case "error":
-          setStatus("error");
-          setStatusText(data);
-          setMessages((prev) => [
-            ...prev,
-            { role: "system", text: data },
-          ]);
-          break;
-        case "reset-done":
-          loadKB(worker);
-          break;
-      }
-    };
-
-    loadKB(worker);
-
-    return () => {
-      worker.terminate();
-      initedRef.current = false;
-    };
-  }, [supabase]);
+  }, [messages, scrollToBottom]);
 
   const sendMessage = useCallback(
-    (text: string) => {
-      if (!text.trim() || status !== "ready") return;
+    async (text: string) => {
+      if (!text.trim() || isStreaming) return;
 
-      setMessages((prev) => [...prev, { role: "user", text: text.trim() }]);
+      const userMsg: Message = { role: "user", text: text.trim() };
+      const newMessages = [...messages, userMsg];
+      setMessages(newMessages);
       setInput("");
-      workerRef.current?.postMessage({ type: "query", data: { text: text.trim() } });
-      inputRef.current?.focus();
+      setIsStreaming(true);
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        const apiMessages = newMessages
+          .filter((m) => m.role !== "system")
+          .map((m) => ({ role: m.role, content: m.text }));
+
+        const res = await fetch("/api/ai-coach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: apiMessages }),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || `Errore ${res.status}`);
+        }
+
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("No stream");
+
+        const decoder = new TextDecoder();
+        let assistantText = "";
+        let buffer = "";
+
+        setMessages((prev) => [...prev, { role: "assistant", text: "" }]);
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6);
+            if (data === "[DONE]") break;
+
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.choices?.[0]?.delta?.content;
+              if (delta) {
+                assistantText += delta;
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = {
+                    role: "assistant",
+                    text: assistantText,
+                  };
+                  return updated;
+                });
+              }
+            } catch {
+              // skip malformed chunks
+            }
+          }
+        }
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          const msg = (err as Error).message;
+          if (msg.includes("Troppe richieste") || msg.includes("429")) {
+            setToast("Troppe richieste. Riprova tra qualche secondo.");
+            setTimeout(() => setToast(null), 4000);
+          } else if (!msg.includes("413")) {
+            setMessages((prev) => [
+              ...prev,
+              { role: "system", text: `Errore: ${msg}` },
+            ]);
+          }
+        }
+      } finally {
+        setIsStreaming(false);
+        abortRef.current = null;
+        inputRef.current?.focus();
+      }
     },
-    [status]
+    [isStreaming, messages]
   );
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -152,15 +133,23 @@ export default function AiCoach() {
   };
 
   const handleReset = useCallback(() => {
+    if (abortRef.current) abortRef.current.abort();
     setMessages([]);
-    setStatus("loading");
-    setStatusText("Reset cache e modello...");
-    setProgress(0);
-    workerRef.current?.postMessage({ type: "reset" });
+    setIsStreaming(false);
   }, []);
 
   return (
-    <div className="h-[100dvh] bg-gray-100 dark:bg-gray-950 transition-colors flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+    <div
+      className="h-[100dvh] bg-gray-100 dark:bg-gray-950 transition-colors flex flex-col"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      {/* Toast popup */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-white px-5 py-3 rounded-lg shadow-lg text-sm font-medium animate-fade-in">
+          {toast}
+        </div>
+      )}
+
       <main className="max-w-3xl mx-auto px-4 py-4 md:py-8 flex flex-col flex-1 min-h-0 w-full">
         {/* Header */}
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 mb-4 transition-colors">
@@ -170,70 +159,27 @@ export default function AiCoach() {
                 AI Coach
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Assistente locale per running, ultra-trail e nutrizione plant-based.
+                Assistente AI per running, ultra-trail e nutrizione plant-based.
                 Basato su <span className="italic">The Plant-Based Athlete</span>,{" "}
                 <span className="italic">Eat &amp; Run</span>,{" "}
                 <span className="italic">Finding Ultra</span> e{" "}
                 <span className="italic">Andiamo a correre</span>.
-                Il modello gira nel tuo browser (~23 MB).
+                Powered by Llama 3.3 70B.
               </p>
             </div>
             <button
               onClick={handleReset}
-              title="Reset cache e ricarica modello"
+              title="Nuova conversazione"
               className="ml-3 mt-1 px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-300 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700 rounded-lg transition-colors whitespace-nowrap"
             >
-              Reset
+              Nuova chat
             </button>
           </div>
         </div>
 
-        {/* Status bar */}
-        {status !== "ready" && status !== "idle" && (
-          <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 mb-4 transition-colors">
-            {status === "loading" && (
-              <div>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">{statusText}</p>
-                {progress > 0 && (
-                  <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-            {status === "indexing" && (
-              <div>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
-                  Indicizzazione domande... {indexProgress.done}/{indexProgress.total}
-                </p>
-                <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${indexProgress.total ? (indexProgress.done / indexProgress.total) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-            {status === "thinking" && (
-              <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
-                <span className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
-                Ricerca in corso...
-              </p>
-            )}
-            {status === "error" && (
-              <p className="text-sm text-red-700 dark:text-red-300">{statusText}</p>
-            )}
-          </div>
-        )}
-
         {/* Messages */}
         <div className="flex-1 overflow-y-auto mb-4 space-y-4 min-h-0">
-          {messages.length === 0 && status === "ready" && (
+          {messages.length === 0 && (
             <div className="text-center py-8">
               <p className="text-gray-500 dark:text-gray-400 mb-6">
                 Chiedimi qualcosa su running, trail, nutrizione plant-based!
@@ -266,57 +212,19 @@ export default function AiCoach() {
                     : "bg-white dark:bg-gray-900 shadow-md text-gray-800 dark:text-gray-200"
                 }`}
               >
-                <p className="whitespace-pre-line text-sm leading-relaxed">{msg.text}</p>
-
-                {/* Sources */}
-                {msg.sources && msg.sources.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-                      Fonti:
-                    </p>
-                    {msg.sources.map((s, j) => (
-                      <span
-                        key={j}
-                        className="inline-block mr-2 mb-1 px-2 py-0.5 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300"
-                      >
-                        {s.fonte} ({s.score}%)
-                      </span>
-                    ))}
+                {msg.role === "assistant" ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2">
+                    <ReactMarkdown>{msg.text}</ReactMarkdown>
                   </div>
+                ) : (
+                  <p className="whitespace-pre-line text-sm leading-relaxed">{msg.text}</p>
                 )}
 
-                {/* Related answers */}
-                {msg.related && msg.related.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
-                      Vedi anche:
-                    </p>
-                    {msg.related.map((r, j) => (
-                      <div
-                        key={j}
-                        className="mb-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs"
-                      >
-                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                          {r.risposta}
-                        </p>
-                        <span className="text-gray-400 dark:text-gray-500 text-[10px]">
-                          {r.fonte} ({r.score}%)
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Confidence + Disclaimer */}
-                {msg.role === "assistant" && (
+                {/* Disclaimer */}
+                {msg.role === "assistant" && msg.text && (
                   <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800">
-                    {msg.confidence != null && (
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-1">
-                        Confidenza: {msg.confidence}%
-                      </p>
-                    )}
                     <p className="text-[10px] italic text-gray-400 dark:text-gray-500 leading-snug">
-                      Le risposte sono generate da un sistema sperimentale basato su ricerca semantica. Non sostituiscono il parere di un professionista. Usale come spunto, non come indicazione definitiva.
+                      Generato da Llama 3.3 70B. Le risposte sono sperimentali e non sostituiscono il parere di un professionista.
                     </p>
                   </div>
                 )}
@@ -324,7 +232,7 @@ export default function AiCoach() {
             </div>
           ))}
 
-          {status === "thinking" && messages.length > 0 && (
+          {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
             <div className="flex justify-start">
               <div className="bg-white dark:bg-gray-900 shadow-md rounded-lg p-4">
                 <div className="flex gap-1">
@@ -340,23 +248,22 @@ export default function AiCoach() {
         </div>
 
         {/* Input - anchored to bottom */}
-        <form onSubmit={handleSubmit} className="flex gap-2 pt-2 pb-[env(safe-area-inset-bottom)] sticky bottom-0 bg-gray-100 dark:bg-gray-950">
+        <form
+          onSubmit={handleSubmit}
+          className="flex gap-2 pt-2 pb-[env(safe-area-inset-bottom)] sticky bottom-0 bg-gray-100 dark:bg-gray-950"
+        >
           <input
             ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={
-              status === "ready"
-                ? "Scrivi la tua domanda..."
-                : "Caricamento modello..."
-            }
-            disabled={status !== "ready"}
+            placeholder="Scrivi la tua domanda..."
+            disabled={isStreaming}
             className="flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 transition-colors"
           />
           <button
             type="submit"
-            disabled={status !== "ready" || !input.trim()}
+            disabled={isStreaming || !input.trim()}
             className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 dark:disabled:bg-gray-700 text-white font-medium rounded-lg transition-colors"
           >
             Invia

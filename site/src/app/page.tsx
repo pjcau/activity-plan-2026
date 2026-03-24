@@ -341,6 +341,7 @@ export default function Home() {
       } else {
         await supabase.from("user_gare").insert({
           user_id: user.id,
+          gara_id: gara.id,
           gara_nome: gara.nome,
           gara_data: gara.data,
           gara_distanza: gara.distanza,
