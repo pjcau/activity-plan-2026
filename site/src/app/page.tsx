@@ -328,18 +328,22 @@ export default function Home() {
       if (!user || !supabase) return;
       const key = garaKey(gara);
       if (savedKeys.has(key)) {
-        await supabase
+        const { error } = await supabase
           .from("user_gare")
           .delete()
           .eq("gara_nome", gara.nome)
           .eq("gara_data", gara.data);
+        if (error) {
+          console.error("Errore rimozione gara:", error);
+          return;
+        }
         setSavedKeys((prev) => {
           const next = new Set(prev);
           next.delete(key);
           return next;
         });
       } else {
-        await supabase.from("user_gare").insert({
+        const { error } = await supabase.from("user_gare").insert({
           user_id: user.id,
           gara_id: gara.id,
           gara_nome: gara.nome,
@@ -349,6 +353,10 @@ export default function Home() {
           gara_localita: gara.localita,
           gara_mese: gara.mese,
         });
+        if (error) {
+          console.error("Errore salvataggio gara:", error);
+          return;
+        }
         setSavedKeys((prev) => new Set(prev).add(key));
       }
     },
