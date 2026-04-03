@@ -11,7 +11,7 @@
     "seed-ricette": "tsx scripts/seed-ricette.ts",
     "cleanup-gare": "tsx scripts/cleanup-gare.ts",
     "seed-content": "tsx scripts/seed-content.ts",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
