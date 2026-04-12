@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -42,6 +42,8 @@ export default function LeMieGare() {
   const [formLocalita, setFormLocalita] = useState("");
   const [formSaving, setFormSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const meseCorrenteRef = useRef<HTMLDivElement>(null);
+  const hasScrolled = useRef(false);
 
   const resetForm = () => {
     setFormNome("");
@@ -121,6 +123,16 @@ export default function LeMieGare() {
     };
     load();
   }, [user, supabase]);
+
+  // Auto-scroll al mese corrente
+  useEffect(() => {
+    if (!loadingGare && gare.length > 0 && !hasScrolled.current && meseCorrenteRef.current) {
+      hasScrolled.current = true;
+      setTimeout(() => {
+        meseCorrenteRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [loadingGare, gare]);
 
   const removeGara = async (gara: SavedGara) => {
     if (!supabase) return;
@@ -269,8 +281,10 @@ export default function LeMieGare() {
         ) : (
           Object.entries(garePerMese)
             .sort(([a], [b]) => Number(a) - Number(b))
-            .map(([mese, gareMese]) => (
-              <div key={mese} className="mb-8">
+            .map(([mese, gareMese]) => {
+              const isMeseCorrente = Number(mese) === new Date().getMonth() + 1;
+              return (
+              <div key={mese} className="mb-8" ref={isMeseCorrente ? meseCorrenteRef : undefined}>
                 <h3 className="text-xl font-bold mb-4 text-emerald-600 dark:text-emerald-400">
                   {mesiNomi[Number(mese)]} 2026
                 </h3>
@@ -346,7 +360,8 @@ export default function LeMieGare() {
                   </table>
                 </div>
               </div>
-            ))
+              );
+            })
         )}
       </main>
     </div>

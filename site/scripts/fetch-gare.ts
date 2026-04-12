@@ -33,11 +33,11 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Finestra di 3 mesi: mese corrente + prossimi 2
+// Finestra di 4 mesi: mese corrente + prossimi 3
 function getMesiTarget(): number[] {
   const now = new Date();
   const meseCorrente = now.getMonth() + 1;
-  return [0, 1, 2].map((offset) => ((meseCorrente - 1 + offset) % 12) + 1);
+  return Array.from({ length: 4 }, (_, i) => ((meseCorrente - 1 + i) % 12) + 1);
 }
 
 const MESI_TARGET = getMesiTarget();
