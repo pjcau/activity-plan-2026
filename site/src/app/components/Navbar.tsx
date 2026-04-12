@@ -18,7 +18,7 @@ export default function Navbar() {
   const { user } = useAuth();
 
   const allLinks = user
-    ? [...links, { href: "/le-mie-gare", label: "Le Mie Gare" }]
+    ? [...links, { href: "/le-mie-gare", label: "Le Mie Gare" }, { href: "/il-mio-allenamento", label: "Il Mio Allenamento" }]
     : links;
 
   return (

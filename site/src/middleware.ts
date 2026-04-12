@@ -35,5 +35,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/le-mie-gare"],
+  matcher: ["/le-mie-gare", "/il-mio-allenamento"],
 };
