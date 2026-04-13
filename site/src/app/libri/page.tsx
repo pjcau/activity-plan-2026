@@ -82,8 +82,8 @@ export default function Libri() {
             Libri Consigliati
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            I 3 libri che hanno ispirato questo progetto e la filosofia
-            alimentare plant-based per runner e atleti di endurance.
+            I libri che hanno ispirato questo progetto: alimentazione
+            plant-based, ultrarunning e mentalità per atleti di endurance.
           </p>
         </div>
 

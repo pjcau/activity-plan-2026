@@ -69,6 +69,34 @@ const libri = [
     lingua: "Italiano",
     ordine: 4,
   },
+  {
+    titolo: "Can't Hurt Me",
+    sottotitolo: "Master Your Mind and Defy the Odds",
+    autori: "David Goggins",
+    anno: 2018,
+    descrizione:
+      "L'autobiografia di David Goggins, ex Navy SEAL e ultrarunner, considerato 'l'uomo più duro del pianeta'. Racconta la sua trasformazione da un'infanzia di abusi e povertà a diventare uno degli atleti di endurance più estremi al mondo. Oltre 300 libbre perse, record di trazioni alla sbarra, e imprese come la Badwater 135. Un libro sulla resilienza mentale e sul superare ogni limite autoimposto.",
+    perche:
+      "Ispirazione per la mentalità e la forza mentale necessarie nell'ultrarunning e nelle gare di endurance.",
+    link_amazon:
+      "https://www.amazon.it/Cant-Hurt-Me-Master-Your/dp/1544512287",
+    lingua: "Inglese",
+    ordine: 5,
+  },
+  {
+    titolo: "Codice Jury",
+    sottotitolo: "In forma a qualunque età con il primo manuale del Signore degli anelli",
+    autori: "Jury Chechi",
+    anno: 2022,
+    descrizione:
+      "Il manuale di calisthenics del 'Signore degli anelli', campione olimpico ad Atlanta 1996 e 5 volte campione del mondo consecutivo. Un percorso modulare di un anno, adatto a tutti i livelli, che parte da zero e insegna ad allenarsi a corpo libero. Non solo esercizi, ma anche nutrizione, respirazione e unità tra corpo e mente.",
+    perche:
+      "Riferimento per il cross-training a corpo libero e il rafforzamento muscolare complementare alla corsa.",
+    link_amazon:
+      "https://www.amazon.it/Codice-qualunque-manuale-Signore-anelli/dp/8830458597",
+    lingua: "Italiano",
+    ordine: 6,
+  },
 ];
 
 const foodPowerTips = [
