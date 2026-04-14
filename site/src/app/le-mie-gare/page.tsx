@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
+import { formatGaraData } from "@/lib/gare";
 
 type SavedGara = {
   id: string;
@@ -22,11 +23,6 @@ const mesiNomi: Record<number, string> = {
   1: "Gennaio", 2: "Febbraio", 3: "Marzo", 4: "Aprile",
   5: "Maggio", 6: "Giugno", 7: "Luglio", 8: "Agosto",
   9: "Settembre", 10: "Ottobre", 11: "Novembre", 12: "Dicembre",
-};
-
-const MESI_SHORT: Record<number, string> = {
-  1: "gen", 2: "feb", 3: "mar", 4: "apr", 5: "mag", 6: "giu",
-  7: "lug", 8: "ago", 9: "set", 10: "ott", 11: "nov", 12: "dic",
 };
 
 export default function LeMieGare() {
@@ -65,10 +61,7 @@ export default function LeMieGare() {
       setFormError("Distanza non valida.");
       return;
     }
-    const date = new Date(formData);
-    const giorno = date.getDate();
-    const mese = date.getMonth() + 1;
-    const garaData = `${giorno} ${MESI_SHORT[mese]}`;
+    const { mese, garaData } = formatGaraData(formData);
 
     setFormSaving(true);
     setFormError("");

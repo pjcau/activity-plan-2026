@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "fetch-gare": "tsx scripts/fetch-gare.ts",
     "seed-ricette": "tsx scripts/seed-ricette.ts",
     "cleanup-gare": "tsx scripts/cleanup-gare.ts",
@@ -34,6 +36,7 @@
     "lint-staged": "^16.2.7",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^4.1.4"
   }
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
+import { buildUserGaraInsert } from "@/lib/gare";
 
 type GaraDettaglio = {
   id: number;
@@ -27,9 +28,11 @@ type GaraDettaglio = {
 
 export default function GaraDetail() {
   const { id } = useParams<{ id: string }>();
-  const { supabase } = useAuth();
+  const { user, supabase } = useAuth();
   const [gara, setGara] = useState<GaraDettaglio | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
+  const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
     if (!supabase || !id) return;
@@ -44,6 +47,39 @@ export default function GaraDetail() {
     };
     load();
   }, [supabase, id]);
+
+  useEffect(() => {
+    if (!user || !supabase || !gara) return;
+    const check = async () => {
+      const { data } = await supabase
+        .from("user_gare")
+        .select("id")
+        .eq("gara_nome", gara.nome)
+        .eq("gara_data", gara.data)
+        .maybeSingle();
+      setSaved(!!data);
+    };
+    check();
+  }, [user, supabase, gara]);
+
+  const toggleGara = async () => {
+    if (!user || !supabase || !gara || toggling) return;
+    setToggling(true);
+    if (saved) {
+      const { error } = await supabase
+        .from("user_gare")
+        .delete()
+        .eq("gara_nome", gara.nome)
+        .eq("gara_data", gara.data);
+      if (!error) setSaved(false);
+    } else {
+      const { error } = await supabase
+        .from("user_gare")
+        .insert(buildUserGaraInsert(user.id, gara));
+      if (!error) setSaved(true);
+    }
+    setToggling(false);
+  };
 
   if (loading) {
     return (
@@ -89,6 +125,20 @@ export default function GaraDetail() {
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 mb-6 transition-colors">
           <div className="flex flex-wrap items-start gap-3 mb-4">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex-1">{gara.nome}</h1>
+            {user && (
+              <button
+                onClick={toggleGara}
+                disabled={toggling}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 ${
+                  saved
+                    ? "bg-yellow-400 hover:bg-yellow-500 text-gray-900"
+                    : "bg-gray-100 dark:bg-gray-800 hover:bg-yellow-100 dark:hover:bg-yellow-900 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600"
+                }`}
+                title={saved ? "Rimuovi dalle mie gare" : "Aggiungi alle mie gare"}
+              >
+                {saved ? "\u2605 Nelle mie gare" : "\u2606 Aggiungi alle mie gare"}
+              </button>
+            )}
             <span
               className={`px-3 py-1 rounded-full text-sm font-medium ${
                 gara.tipo === "Trail"

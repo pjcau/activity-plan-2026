@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
+import { parseDataGara, garaKey, buildUserGaraInsert } from "@/lib/gare";
 
 type Fonte = "Calendario Podismo" | "US Nave" | "TrailRunning.it";
 
@@ -40,20 +41,6 @@ const fonteBadge: Record<Fonte, { bg: string; text: string; short: string }> = {
   "US Nave": { bg: "bg-purple-100 dark:bg-purple-900", text: "text-purple-700 dark:text-purple-300", short: "USN" },
   "TrailRunning.it": { bg: "bg-orange-100 dark:bg-orange-900", text: "text-orange-700 dark:text-orange-300", short: "TR" },
 };
-
-const MESI_SHORT_TO_NUM: Record<string, number> = {
-  gen: 0, feb: 1, mar: 2, apr: 3, mag: 4, giu: 5,
-  lug: 6, ago: 7, set: 8, ott: 9, nov: 10, dic: 11,
-};
-
-function parseDataGara(data: string): Date | null {
-  const parts = data.trim().split(/\s+/);
-  if (parts.length < 2) return null;
-  const giorno = parseInt(parts[0]);
-  const mese = MESI_SHORT_TO_NUM[parts[1].toLowerCase()];
-  if (!giorno || mese === undefined) return null;
-  return new Date(2026, mese, giorno);
-}
 
 const FILTERS_KEY = "gare-filtri";
 const FILTER_DEFAULTS = {
@@ -96,10 +83,6 @@ function FonteBadge({ fonte }: { fonte: Fonte }) {
       {short}
     </span>
   );
-}
-
-function garaKey(gara: Gara): string {
-  return `${gara.nome}::${gara.data}`;
 }
 
 function GareTable({
@@ -343,16 +326,9 @@ export default function Home() {
           return next;
         });
       } else {
-        const { error } = await supabase.from("user_gare").insert({
-          user_id: user.id,
-          gara_id: gara.id,
-          gara_nome: gara.nome,
-          gara_data: gara.data,
-          gara_distanza: gara.distanza,
-          gara_tipo: gara.tipo,
-          gara_localita: gara.localita,
-          gara_mese: gara.mese,
-        });
+        const { error } = await supabase
+          .from("user_gare")
+          .insert(buildUserGaraInsert(user.id, gara));
         if (error) {
           console.error("Errore salvataggio gara:", error);
           return;
