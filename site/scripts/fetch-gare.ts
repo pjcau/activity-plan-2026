@@ -610,8 +610,12 @@ async function fetchTrailRunningIt(): Promise<Gara[]> {
   const url = "https://trailrunning.it/gare/gare-trail-toscana-2026/";
   console.log(`[TrailRunning.it] Fetching ${url}...`);
 
+  // Il sito ha un WAF che 403-a UA generici come "ActivityPlan2026/1.0".
   const res = await fetch(url, {
-    headers: { "User-Agent": "ActivityPlan2026/1.0" },
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    },
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -862,10 +866,18 @@ async function main() {
   console.log(`Mesi target: ${MESI_TARGET.map((m) => mesiNomi[m]).join(", ")}\n`);
 
   const existingGare = await loadExistingGare();
+  // Fallback rows must NOT carry `id` — Supabase `.insert([...])` takes the
+  // union of keys across all rows, so a single id-bearing row forces every
+  // other row to send `id: null`, which violates the NOT NULL constraint.
+  const stripId = (g: Gara & { id: number }): Gara => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...rest } = g;
+    return rest;
+  };
   const existingBySource: Record<Fonte, Gara[]> = {
-    "Calendario Podismo": existingGare.filter((g) => g.fonti.includes("Calendario Podismo")),
-    "US Nave": existingGare.filter((g) => g.fonti.includes("US Nave")),
-    "TrailRunning.it": existingGare.filter((g) => g.fonti.includes("TrailRunning.it")),
+    "Calendario Podismo": existingGare.filter((g) => g.fonti.includes("Calendario Podismo")).map(stripId),
+    "US Nave": existingGare.filter((g) => g.fonti.includes("US Nave")).map(stripId),
+    "TrailRunning.it": existingGare.filter((g) => g.fonti.includes("TrailRunning.it")).map(stripId),
   };
 
   // Fetch listing pages
@@ -972,9 +984,17 @@ async function main() {
     }
   }
 
-  // Strip campo interno _detailUrl prima dell'inserimento
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const rowsToInsert = merged.map(({ _detailUrl, ...rest }) => rest);
+  // Strip campo interno _detailUrl e `id` (se presente per via di un fallback
+  // da existingBySource) prima dell'inserimento. Un singolo id-leak farebbe
+  // fallire l'intero batch con "null value in column id".
+  const rowsToInsert = merged.map((g) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { _detailUrl, ...rest } = g;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const withMaybeId = rest as any;
+    if ("id" in withMaybeId) delete withMaybeId.id;
+    return rest;
+  });
 
   // Cancella SOLO le gare che stiamo per re-inserire con dati aggiornati
   // Le gare non toccate dallo scraping restano intatte nel DB
